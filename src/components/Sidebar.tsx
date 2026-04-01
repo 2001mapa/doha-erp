@@ -13,8 +13,8 @@ import {
   Receipt,
   ChevronDown,
   CircleDot,
-  Menu,
   ChevronLeft,
+  ShoppingBag,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -44,6 +44,11 @@ const menuItems = [
     name: "Productos",
     icon: <Package size={20} />,
     subItems: [
+      {
+        name: "Catálogo",
+        icon: <ShoppingBag size={16} />,
+        href: "/admin/productos",
+      },
       { name: "Unidades", href: "/admin/productos/unidades" },
       { name: "Categoría", href: "/admin/productos/categoria" },
       { name: "Bodegas", href: "/admin/productos/bodegas" },

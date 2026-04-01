@@ -49,7 +49,7 @@ const menuItems = [
       { name: "Bodegas", href: "/admin/productos/bodegas" },
       {
         name: "Clasificación Contable",
-        href: "/admin/productos/clasificacion-contable",
+        href: "/admin/productos/clasificacion",
       },
     ],
   },

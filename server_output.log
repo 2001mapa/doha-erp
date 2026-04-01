@@ -1,0 +1,54 @@
+
+> doha-erp@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 543ms
+
+○ Compiling /admin/productos/clasificacion ...
+ GET /admin/productos/clasificacion 200 in 7.2s (next.js: 6.6s, application-code: 609ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+      <LoadingBoundary name="clasificac..." loading={null}>
+        <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+          <RedirectBoundary>
+            <RedirectErrorBoundary router={{...}}>
+              <InnerLayoutRouter url="/admin/pro..." tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>
+                <SegmentViewNode type="page" pagePath="src/admin/...">
+                  <SegmentTrieNode>
+                  <ClientPageRoot Component={function ClasificacionContablePage} serverProvidedParams={{...}}>
+                    <ClasificacionContablePage params={Promise} searchParams={Promise}>
+                      <div className="p-8 min-h-...">
+                        <div className="max-w-6xl ...">
+                          <div>
+                          <div className="bg-white p...">
+                            <div className="relative w...">
+                              <Search>
+                              <input
+                                type="text"
+                                placeholder="Buscar por nombre o cuenta..."
+                                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-..."
+                                value=""
+                                onChange={function onChange}
+-                               style={{caret-color:"transparent"}}
+                              >
+                            ...
+                          ...
+                ...
+              ...
+
+ GET /admin/productos/clasificacion 200 in 109ms (next.js: 6ms, application-code: 103ms)

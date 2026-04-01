@@ -1,0 +1,195 @@
+"use client";
+import { useState } from "react";
+import {
+  Settings,
+  Building2,
+  UserPlus,
+  ShieldCheck,
+  Package,
+  Users,
+  FileText,
+  Wallet,
+  ClipboardList,
+  Receipt,
+  ChevronDown,
+  CircleDot,
+  Menu,
+  ChevronLeft,
+} from "lucide-react";
+import Link from "next/link";
+
+const menuItems = [
+  {
+    name: "General",
+    icon: <Settings size={20} />,
+    subItems: [
+      {
+        name: "Creación de Usuarios",
+        icon: <UserPlus size={16} />,
+        href: "/admin/general/usuarios",
+      },
+      {
+        name: "Tipo de Usuarios",
+        icon: <ShieldCheck size={16} />,
+        href: "/admin/general/roles",
+      },
+      {
+        name: "Datos de Empresa",
+        icon: <Building2 size={16} />,
+        href: "/admin/general/empresa",
+      },
+    ],
+  },
+  {
+    name: "Productos",
+    icon: <Package size={20} />,
+    subItems: [
+      { name: "Unidades", href: "/admin/productos/unidades" },
+      { name: "Categoría", href: "/admin/productos/categoria" },
+      { name: "Bodegas", href: "/admin/productos/bodegas" },
+      {
+        name: "Clasificación Contable",
+        href: "/admin/productos/clasificacion-contable",
+      },
+    ],
+  },
+  {
+    name: "Gestión de Terceros",
+    icon: <Users size={20} />,
+    href: "/admin/terceros",
+  },
+  {
+    name: "Contabilidad",
+    icon: <FileText size={20} />,
+    href: "/admin/contabilidad",
+  },
+  { name: "Cartera", icon: <Wallet size={20} />, href: "/admin/cartera" },
+  {
+    name: "Inventario",
+    icon: <ClipboardList size={20} />,
+    href: "/admin/inventory",
+  },
+  { name: "Facturación", icon: <Receipt size={20} />, href: "/admin/pos" },
+];
+
+export const DohaSidebar = () => {
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleSubmenu = (name: string) => {
+    setOpenSubmenu(openSubmenu === name ? null : name);
+  };
+
+  // Definimos las transiciones comunes para sincronizar perfectamente botón y panel
+  const transitionClass =
+    "transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]";
+
+  return (
+    <>
+      {/* --- BOTÓN FLOTANTE CON FLECHA --- */}
+      <div
+        className={`fixed top-1/2 -translate-y-1/2 z-[60] ${transitionClass}`}
+        style={{
+          left: isSidebarOpen ? "288px" : "20px",
+        }}
+      >
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="group relative flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg shadow-amber-500/30 hover:shadow-xl hover:shadow-amber-500/40 hover:scale-110 active:scale-95 transition-all duration-300"
+        >
+          {/* Efecto de brillo */}
+          <div className="absolute inset-0 rounded-full bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+          {/* Ícono animado */}
+          <div
+            className={`relative transition-transform duration-500 ${isSidebarOpen ? "rotate-180" : "rotate-0"}`}
+          >
+            <ChevronLeft size={24} strokeWidth={2.5} className="text-white" />
+          </div>
+
+          {/* Anillo de pulso */}
+          <div className="absolute inset-0 rounded-full border-2 border-amber-400/50 animate-ping opacity-0 group-hover:opacity-100" />
+        </button>
+      </div>
+
+      {/* OVERLAY OSCURO (Suave backdrop-blur) */}
+      <div
+        onClick={() => setIsSidebarOpen(false)}
+        className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          isSidebarOpen ? "opacity-100 visible" : "opacity-0 invisible"
+        }`}
+      />
+
+      {/* MENÚ LATERAL DESLIZABLE */}
+      <aside
+        className={`fixed top-0 left-0 h-screen w-72 bg-zinc-950 border-r border-zinc-800 p-6 flex flex-col text-white shadow-2xl z-50 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="mb-10 px-2 flex items-center justify-between">
+          <h1 className="text-2xl font-black bg-linear-to-r from-amber-200 to-amber-500 bg-clip-text text-transparent">
+            DOHA 18K
+          </h1>
+        </div>
+
+        <nav className="flex-1 space-y-2 overflow-y-auto pr-2 scrollbar-none">
+          {menuItems.map((item) => (
+            <div key={item.name} className="group">
+              {item.subItems ? (
+                <div>
+                  <button
+                    onClick={() => toggleSubmenu(item.name)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl transition-all text-zinc-100 hover:bg-white/10 hover:text-amber-500 focus:bg-amber-500/10 focus:text-amber-500"
+                  >
+                    <div className="flex items-center gap-3">
+                      {item.icon}
+                      <span className="font-semibold text-sm">{item.name}</span>
+                    </div>
+                    <ChevronDown
+                      size={14}
+                      className={`transition-all duration-200 ${
+                        openSubmenu === item.name
+                          ? "opacity-100 rotate-180 text-amber-500"
+                          : "opacity-0 group-hover:opacity-100 text-zinc-400"
+                      }`}
+                    />
+                  </button>
+
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ${openSubmenu === item.name ? "max-h-60 mt-1" : "max-h-0"}`}
+                  >
+                    <div className="flex flex-col pl-9 pr-3 space-y-1 border-l-2 border-zinc-800 ml-3">
+                      {item.subItems.map((sub) => (
+                        <Link
+                          key={sub.name}
+                          href={sub.href}
+                          onClick={() => setIsSidebarOpen(false)}
+                        >
+                          <span className="flex items-center gap-2.5 py-2.5 text-xs font-semibold text-zinc-400 hover:text-amber-400 transition-colors">
+                            {"icon" in sub ? sub.icon : <CircleDot size={8} />}
+                            {sub.name}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Link href={item.href} onClick={() => setIsSidebarOpen(false)}>
+                  <button className="w-full flex items-center justify-between p-3 rounded-xl transition-all text-zinc-100 hover:bg-white/10 hover:text-amber-500 focus:bg-amber-500/10 focus:text-amber-500">
+                    <div className="flex items-center gap-3">
+                      {item.icon}
+                      <span className="font-semibold text-sm">{item.name}</span>
+                    </div>
+                  </button>
+                </Link>
+              )}
+            </div>
+          ))}
+        </nav>
+      </aside>
+    </>
+  );
+};
+
+export default DohaSidebar;

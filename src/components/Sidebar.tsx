@@ -74,7 +74,22 @@ const menuItems = [
     icon: <ClipboardList size={20} />,
     href: "/admin/inventory",
   },
-  { name: "Facturación", icon: <Receipt size={20} />, href: "/admin/pos" },
+  {
+    name: "Facturación",
+    icon: <Receipt size={20} />,
+    subItems: [
+      {
+        name: "Punto de Venta",
+        icon: <ShoppingBag size={16} />,
+        href: "/admin/pos",
+      },
+      {
+        name: "Remisiones",
+        icon: <Receipt size={16} />,
+        href: "/admin/pos/remisiones",
+      },
+    ],
+  },
 ];
 
 export const DohaSidebar = () => {

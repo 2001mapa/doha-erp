@@ -10,6 +10,9 @@ import {
   UserCheck,
   FileText,
   Wallet,
+  Wallet2,
+  Tag,
+  CalendarDays,
   ClipboardList,
   Receipt,
   ChevronDown,
@@ -101,7 +104,32 @@ const menuItems = [
       },
     ],
   },
-  { name: "Cartera", icon: <Wallet size={20} />, href: "/admin/cartera" },
+  {
+    name: "Cartera",
+    icon: <Wallet size={20} />,
+    subItems: [
+      {
+        name: "Conceptos",
+        icon: <Tag size={16} />,
+        href: "/admin/cartera/conceptos",
+      },
+      {
+        name: "Formas de pago",
+        icon: <Wallet2 size={16} />,
+        href: "/admin/cartera/formas-pago",
+      },
+      {
+        name: "Recibos",
+        icon: <Receipt size={16} />,
+        href: "/admin/cartera/recibos",
+      },
+      {
+        name: "Edades",
+        icon: <CalendarDays size={16} />,
+        href: "/admin/cartera/edades",
+      },
+    ]
+  },
   {
     name: "Inventario",
     icon: <ClipboardList size={20} />,
@@ -144,6 +172,7 @@ export const DohaSidebar = () => {
       if (item.name === "Gestión de Terceros") return false;
       // Seguridad: Módulo "Contabilidad" oculto para el rol Vendedor
       if (item.name === "Contabilidad") return false;
+      if (item.name === "Cartera") return false;
 
       return item.name === "Facturación";
     }

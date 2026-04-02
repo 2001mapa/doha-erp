@@ -1,43 +1,53 @@
 "use client";
 import { useState } from "react";
 import {
-  Building2,
-  Phone,
-  Mail,
-  MapPin,
-  FileText,
-  Percent,
   Save,
   UploadCloud,
   CheckCircle2,
-  Hash,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function EmpresaPage() {
   const [formData, setFormData] = useState({
-    razonSocial: "DOHA 18K S.A.S.",
-    nombreComercial: "DOHA 18K",
     tipoDocumento: "31 - NIT",
-    identificacion: "901234567",
-    dv: "8",
-    regimen: "Régimen Común (Responsable de IVA)",
-    actividadEconomica: "4777",
-    telefono: "+57 300 123 4567",
-    email: "contacto@doha18k.com",
-    direccion: "Centro Comercial Principal, Local 123",
-    ciudad: "Medellín",
+    identificacion: "900.123.456",
+    dv: "4",
+    razonSocial: "DOHA 18K SAS",
+    nombreComercial: "",
+    regimen: "Régimen Común",
+    actividadEconomica: "",
+    fechaActividad: "",
+    direccion: "",
     departamento: "Antioquia",
-    moneda: "COP",
-    impuestoDefecto: "19",
+    ciudad: "Medellín",
+    barrio: "",
+    telefono: "",
+    telefono2: "",
+    email: "",
+    moneda: "Peso Colombiano",
+    consecutivosAutomaticos: false,
+    fechaConsecutivo: "",
+    decimalesCantidades: 0,
+    decimalesValores: 0,
+    decimalesCompras: 2,
+    decimalesVentas: 0,
+    decimalesCartera: 0,
   });
 
   const [isSaved, setIsSaved] = useState(false);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type } = e.target;
+
+    // Type narrowing to safely access checked
+    if (type === "checkbox") {
+        const checked = (e.target as HTMLInputElement).checked;
+        setFormData({ ...formData, [name]: checked });
+    } else {
+        setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -47,21 +57,28 @@ export default function EmpresaPage() {
   };
 
   return (
-    <div className="p-8 min-h-screen bg-[#fdfbf9] pb-24">
-      {/* CONTENEDOR CENTRAL: Aquí agregamos mx-auto y max-w-5xl para centrar todo */}
-      <div className="max-w-5xl mx-auto w-full">
-        {/* Encabezado */}
-        <div className="mb-8">
-          <p className="text-sm font-medium text-gray-500 mb-1">
-            Configuración Inicial /{" "}
-            <span className="text-[#D3AB80] font-bold">Perfil de Empresa</span>
-          </p>
-          <h1 className="text-3xl font-black text-[#472825]">
-            Datos de la Empresa
-          </h1>
-          <p className="text-sm text-gray-500 mt-2">
-            Configuración legal y tributaria para facturación y reportes.
-          </p>
+    <div className="min-h-screen bg-[#fdfbf9] pb-24">
+      {/* Contenedor central actualizado: max-w-5xl mx-auto w-full p-4 md:p-6 */}
+      <div className="max-w-5xl mx-auto w-full p-4 md:p-6">
+
+        {/* Encabezado con título y botón de guardar en la parte superior derecha */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-1">
+              Configuración Inicial /{" "}
+              <span className="text-[#D3AB80] font-bold">Perfil de Empresa</span>
+            </p>
+            <h1 className="text-3xl font-black text-[#472825]">
+              Configuración General de la Empresa
+            </h1>
+          </div>
+          <button
+            onClick={handleSubmit}
+            className="bg-[#D3AB80] text-white px-6 py-3 rounded-lg text-sm font-bold hover:bg-[#b8956e] transition-colors flex items-center justify-center gap-2 w-full md:w-auto"
+          >
+            <Save size={18} />
+            Guardar Cambios
+          </button>
         </div>
 
         <AnimatePresence>
@@ -81,261 +98,334 @@ export default function EmpresaPage() {
         </AnimatePresence>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* BLOQUE 1: Logo e Identidad Legal */}
-          <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-8 items-start">
-            <div className="flex flex-col items-center gap-3 w-full md:w-auto">
-              <div className="w-32 h-32 bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center text-gray-400 hover:border-[#D3AB80] hover:text-[#D3AB80] hover:bg-orange-50/50 transition-colors cursor-pointer group">
-                <UploadCloud
-                  size={32}
-                  className="mb-2 group-hover:-translate-y-1 transition-transform"
-                />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">
-                  Subir Logo
-                </span>
-              </div>
-            </div>
 
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
-              <div className="space-y-1.5 md:col-span-2">
-                <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                  Razón Social
-                </label>
-                <div className="relative">
-                  <Building2
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                    size={18}
+          {/* Tarjeta 1: Identificación Principal */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+            <h2 className="text-lg font-bold text-[#472825] mb-4 border-b border-gray-100 pb-2">
+              Identificación Principal
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="flex flex-col gap-1 md:col-span-2 mb-2">
+                 <div className="w-32 h-32 bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center text-gray-400 hover:border-[#D3AB80] hover:text-[#D3AB80] hover:bg-orange-50/50 transition-colors cursor-pointer group">
+                  <UploadCloud
+                    size={32}
+                    className="mb-2 group-hover:-translate-y-1 transition-transform"
                   />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">
+                    Subir Logo
+                  </span>
+                  <input type="file" className="hidden" />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Tipo Identificación</label>
+                <select
+                  name="tipoDocumento"
+                  value={formData.tipoDocumento}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                >
+                  <option value="31 - NIT">31 - NIT</option>
+                  <option value="13 - Cédula">13 - Cédula</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-4 gap-2">
+                <div className="space-y-1 col-span-3">
+                  <label className="text-xs font-bold text-gray-500 uppercase">Número de Identificación</label>
                   <input
                     type="text"
-                    name="razonSocial"
-                    value={formData.razonSocial}
+                    name="identificacion"
+                    value={formData.identificacion}
                     onChange={handleChange}
-                    required
-                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
                   />
                 </div>
-              </div>
-
-              {/* Documento, NIT y DV agrupados */}
-              <div className="space-y-1.5 md:col-span-2 grid grid-cols-12 gap-3">
-                <div className="col-span-12 sm:col-span-5">
-                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                    Tipo Identificación
-                  </label>
-                  <select
-                    name="tipoDocumento"
-                    value={formData.tipoDocumento}
-                    onChange={handleChange}
-                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825] appearance-none"
-                  >
-                    <option value="31 - NIT">31 - NIT</option>
-                    <option value="13 - Cédula">
-                      13 - Cédula de Ciudadanía
-                    </option>
-                    <option value="42 - Extranjería">
-                      42 - Documento Extranjero
-                    </option>
-                  </select>
-                </div>
-                <div className="col-span-9 sm:col-span-5">
-                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                    Número
-                  </label>
-                  <div className="relative">
-                    <FileText
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                      size={18}
-                    />
-                    <input
-                      type="text"
-                      name="identificacion"
-                      value={formData.identificacion}
-                      onChange={handleChange}
-                      required
-                      className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                    />
-                  </div>
-                </div>
-                <div className="col-span-3 sm:col-span-2">
-                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                    DV
-                  </label>
+                <div className="space-y-1 col-span-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase">DV</label>
                   <input
                     type="text"
                     name="dv"
                     value={formData.dv}
                     onChange={handleChange}
-                    maxLength={1}
-                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825] text-center"
+                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors text-center"
                   />
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* BLOQUE 2: Parámetros Legales y Contables */}
-          <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-5">
-            <h2 className="md:col-span-2 text-lg font-bold text-[#472825] mb-2 border-b border-gray-100 pb-3">
-              Parámetros Fiscales
-            </h2>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                Régimen
-              </label>
-              <select
-                name="regimen"
-                value={formData.regimen}
-                onChange={handleChange}
-                className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825] appearance-none"
-              >
-                <option value="Régimen Común (Responsable de IVA)">
-                  Régimen Común
-                </option>
-                <option value="Régimen Simplificado (No Responsable)">
-                  Régimen Simplificado
-                </option>
-                <option value="No Contribuyente">No Contribuyente</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                Actividad Económica (CIIU)
-              </label>
-              <div className="relative">
-                <Hash
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={18}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Razón Social</label>
+                <input
+                  type="text"
+                  name="razonSocial"
+                  value={formData.razonSocial}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
                 />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Nombre Comercial / Descripción</label>
+                <input
+                  type="text"
+                  name="nombreComercial"
+                  value={formData.nombreComercial}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Régimen</label>
+                <select
+                  name="regimen"
+                  value={formData.regimen}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                >
+                  <option value="Régimen Común">Régimen Común</option>
+                  <option value="Régimen Simplificado">Régimen Simplificado</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Actividad Económica</label>
                 <input
                   type="text"
                   name="actividadEconomica"
                   value={formData.actividadEconomica}
                   onChange={handleChange}
-                  required
-                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                  placeholder="Ej. 4777"
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1 md:col-span-2">
+                <label className="text-xs font-bold text-gray-500 uppercase">Fecha de Actividad</label>
+                <input
+                  type="date"
+                  name="fechaActividad"
+                  value={formData.fechaActividad}
+                  onChange={handleChange}
+                  className="w-full md:w-1/2 bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
                 />
               </div>
             </div>
           </div>
 
-          {/* BLOQUE 3: Contacto y Ubicación */}
-          <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-5">
-            <h2 className="md:col-span-2 text-lg font-bold text-[#472825] mb-2 border-b border-gray-100 pb-3">
-              Información de Contacto
+          {/* Tarjeta 2: Ubicación y Contacto */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+            <h2 className="text-lg font-bold text-[#472825] mb-4 border-b border-gray-100 pb-2">
+              Ubicación y Contacto
             </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                Teléfono Principal
-              </label>
-              <div className="relative">
-                <Phone
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
-                <input
-                  type="text"
-                  name="telefono"
-                  value={formData.telefono}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                Correo Electrónico
-              </label>
-              <div className="relative">
-                <Mail
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                Departamento
-              </label>
-              <div className="relative">
-                <MapPin
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
-                <input
-                  type="text"
-                  name="departamento"
-                  value={formData.departamento}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                Ciudad
-              </label>
-              <div className="relative">
-                <MapPin
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
-                <input
-                  type="text"
-                  name="ciudad"
-                  value={formData.ciudad}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5 md:col-span-2">
-              <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                Dirección Completa
-              </label>
-              <div className="relative">
-                <MapPin
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
+              <div className="space-y-1 md:col-span-2">
+                <label className="text-xs font-bold text-gray-500 uppercase">Dirección</label>
                 <input
                   type="text"
                   name="direccion"
                   value={formData.direccion}
                   onChange={handleChange}
-                  required
-                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
                 />
               </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Departamento</label>
+                <select
+                  name="departamento"
+                  value={formData.departamento}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                >
+                  <option value="Antioquia">Antioquia</option>
+                  <option value="Cundinamarca">Cundinamarca</option>
+                  <option value="Valle del Cauca">Valle del Cauca</option>
+                  {/* Más opciones se pueden agregar */}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Ciudad</label>
+                <select
+                  name="ciudad"
+                  value={formData.ciudad}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                >
+                  <option value="Medellín">Medellín</option>
+                  <option value="Bogotá">Bogotá</option>
+                  <option value="Cali">Cali</option>
+                  {/* Más opciones se pueden agregar */}
+                </select>
+              </div>
+
+              <div className="space-y-1 md:col-span-2">
+                <label className="text-xs font-bold text-gray-500 uppercase">Barrio</label>
+                <input
+                  type="text"
+                  name="barrio"
+                  value={formData.barrio}
+                  onChange={handleChange}
+                  className="w-full md:w-1/2 bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Teléfono Principal</label>
+                <input
+                  type="text"
+                  name="telefono"
+                  value={formData.telefono}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Teléfono 2</label>
+                <input
+                  type="text"
+                  name="telefono2"
+                  value={formData.telefono2}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Correo Electrónico</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Moneda Principal</label>
+                <select
+                  name="moneda"
+                  value={formData.moneda}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                >
+                  <option value="Peso Colombiano">Peso Colombiano</option>
+                  <option value="Dólar Estadounidense">Dólar Estadounidense</option>
+                </select>
+              </div>
+
             </div>
           </div>
 
-          {/* Botón Flotante / Fijo para Guardar */}
-          <div className="fixed bottom-8 right-8 z-40">
-            <button
-              type="submit"
-              className="bg-[#472825] text-white px-8 py-4 rounded-full text-sm font-bold hover:bg-black transition-all shadow-[0_8px_30px_rgba(71,40,37,0.4)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.6)] hover:-translate-y-1 flex items-center gap-3 group"
-            >
-              <Save
-                size={20}
-                className="group-hover:scale-110 transition-transform"
-              />
-              Guardar Configuración
-            </button>
+          {/* Tarjeta 3: Configuración de Documentos */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+            <h2 className="text-lg font-bold text-[#472825] mb-4 border-b border-gray-100 pb-2">
+              Configuración de Documentos
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="space-y-1 flex flex-col justify-center">
+                <label className="flex items-center gap-2 text-sm font-medium text-[#472825] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="consecutivosAutomaticos"
+                    checked={formData.consecutivosAutomaticos}
+                    onChange={handleChange}
+                    className="w-5 h-5 accent-[#D3AB80] cursor-pointer"
+                  />
+                  Maneja Consecutivos Automáticos
+                </label>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Consecutivos a partir de</label>
+                <input
+                  type="date"
+                  name="fechaConsecutivo"
+                  value={formData.fechaConsecutivo}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                />
+              </div>
+
+            </div>
           </div>
+
+          {/* Tarjeta 4: Configuración de Decimales */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+            <h2 className="text-lg font-bold text-[#472825] mb-4 border-b border-gray-100 pb-2">
+              Configuración de Decimales
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Cantidades</label>
+                <input
+                  type="number"
+                  name="decimalesCantidades"
+                  value={formData.decimalesCantidades}
+                  onChange={handleChange}
+                  min="0"
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Valores Generales</label>
+                <input
+                  type="number"
+                  name="decimalesValores"
+                  value={formData.decimalesValores}
+                  onChange={handleChange}
+                  min="0"
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Valores en Compras</label>
+                <input
+                  type="number"
+                  name="decimalesCompras"
+                  value={formData.decimalesCompras}
+                  onChange={handleChange}
+                  min="0"
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Valores en Ventas</label>
+                <input
+                  type="number"
+                  name="decimalesVentas"
+                  value={formData.decimalesVentas}
+                  onChange={handleChange}
+                  min="0"
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Valores en Cartera</label>
+                <input
+                  type="number"
+                  name="decimalesCartera"
+                  value={formData.decimalesCartera}
+                  onChange={handleChange}
+                  min="0"
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-lg py-2 px-3 text-sm text-[#472825] outline-none transition-colors"
+                />
+              </div>
+
+            </div>
+          </div>
+
         </form>
       </div>
     </div>

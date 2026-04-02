@@ -95,39 +95,39 @@ export default function CarritoPage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-[#fdfbf9] text-[#472825] py-10">
-      <div className="max-w-7xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-8">Carrito de Compras</h1>
+    <div className="min-h-screen bg-[#fdfbf9] text-[#472825] py-6 pb-24">
+      <div className="max-w-7xl mx-auto px-4 w-full">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6">Carrito de Compras</h1>
 
-        <div className="grid lg:grid-cols-12 gap-8">
+        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6">
           {/* Left Column */}
-          <div className="lg:col-span-7 space-y-6">
+          <div className="w-full lg:col-span-7 space-y-4">
             <h2 className="text-xl font-semibold mb-4">Resumen de Artículos</h2>
             {productos.length === 0 ? (
               <p>Tu carrito está vacío.</p>
             ) : (
               productos.map((producto) => (
-                <div key={producto.id} className="flex flex-col sm:flex-row items-center gap-4 border-b border-[#e6dfd8] pb-4">
-                  <div className="w-24 h-24 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center overflow-hidden">
+                <div key={producto.id} className="flex flex-row items-start sm:items-center gap-4 border-b border-[#e6dfd8] pb-4 w-full">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
                     <div className="text-gray-400 text-xs">IMG</div>
                   </div>
-                  <div className="flex-1 w-full text-center sm:text-left">
-                    <h3 className="font-semibold text-lg">{producto.nombre}</h3>
-                    <p className="text-sm text-[#8a726f]">{producto.atributo}</p>
-                    <p className="font-bold mt-1 text-[#D3AB80]">${(producto.precio * producto.cantidad).toLocaleString()}</p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm sm:text-lg truncate">{producto.nombre}</h3>
+                    <p className="text-xs sm:text-sm text-[#8a726f]">{producto.atributo}</p>
+                    <p className="font-bold mt-1 text-[#D3AB80] text-sm sm:text-base">${(producto.precio * producto.cantidad).toLocaleString()}</p>
                   </div>
-                  <div className="flex flex-col items-center sm:items-end gap-2 w-full sm:w-auto mt-4 sm:mt-0">
-                    <div className="flex items-center border border-[#e6dfd8] rounded">
-                      <button onClick={() => handleQuantityChange(producto.id, producto.atributo, -1)} className="p-2 hover:bg-[#f5f1ec] transition text-[#472825]">
+                  <div className="flex flex-col items-end gap-3 flex-shrink-0">
+                    <div className="flex items-center border border-[#e6dfd8] rounded-lg overflow-hidden h-12">
+                      <button onClick={() => handleQuantityChange(producto.id, producto.atributo, -1)} className="h-full px-3 hover:bg-[#f5f1ec] transition text-[#472825] flex items-center justify-center min-w-[48px]">
                         <Minus className="w-4 h-4" />
                       </button>
                       <span className="w-8 text-center text-sm font-medium">{producto.cantidad}</span>
-                      <button onClick={() => handleQuantityChange(producto.id, producto.atributo, 1)} className="p-2 hover:bg-[#f5f1ec] transition text-[#472825]">
+                      <button onClick={() => handleQuantityChange(producto.id, producto.atributo, 1)} className="h-full px-3 hover:bg-[#f5f1ec] transition text-[#472825] flex items-center justify-center min-w-[48px]">
                         <Plus className="w-4 h-4" />
                       </button>
                     </div>
-                    <button onClick={() => handleRemoveItem(producto.id, producto.atributo)} className="text-red-500 hover:text-red-700 transition flex items-center text-sm mt-1">
-                      <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+                    <button onClick={() => handleRemoveItem(producto.id, producto.atributo)} className="text-red-500 hover:text-red-700 transition flex items-center justify-center p-2 min-h-[48px] min-w-[48px]">
+                      <Trash2 className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-1" /> <span className="hidden sm:inline text-sm">Eliminar</span>
                     </button>
                   </div>
                 </div>
@@ -136,8 +136,8 @@ export default function CarritoPage() {
           </div>
 
           {/* Right Column */}
-          <div className="lg:col-span-5">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-[#e6dfd8]">
+          <div className="w-full lg:col-span-5">
+            <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-[#e6dfd8] w-full">
               <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-[#D3AB80]" /> Envío y Facturación
               </h2>
@@ -240,7 +240,7 @@ export default function CarritoPage() {
               <button
                 onClick={handleSubmit}
                 disabled={!isFormValid}
-                className={`w-full mt-8 py-3.5 px-4 rounded-lg font-bold transition-colors flex items-center justify-center gap-2 shadow-sm ${
+                className={`w-full mt-8 py-4 px-4 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-sm min-h-[56px] text-lg ${
                   isFormValid
                     ? "bg-[#D3AB80] hover:bg-[#b8956e] text-white"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"

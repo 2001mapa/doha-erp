@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Search, User, ShoppingBag, Eye, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useCart } from "../context/CartContext";
 
 // Mock Data
 const PRODUCTS = [
@@ -49,6 +50,10 @@ export default function HomePage() {
   const [selectedProduct, setSelectedProduct] = useState<typeof PRODUCTS[0] | null>(null);
   const [selectedSize, setSelectedSize] = useState<string>("Estándar");
   const [quantity, setQuantity] = useState(1);
+  const [showToast, setShowToast] = useState(false);
+
+  const { addToCart, cartItems } = useCart();
+  const totalCartItems = cartItems.reduce((acc, item) => acc + item.cantidad, 0);
 
   const openProduct = (product: typeof PRODUCTS[0]) => {
     setSelectedProduct(product);
@@ -58,6 +63,24 @@ export default function HomePage() {
 
   const closeProduct = () => {
     setSelectedProduct(null);
+  };
+
+  const handleAddToCart = () => {
+    if (selectedProduct) {
+      // Parse price to number
+      const parsedPrice = parseInt(selectedProduct.price.replace(/[^0-9]/g, ''), 10);
+      addToCart({
+        id: selectedProduct.id,
+        nombre: selectedProduct.name,
+        atributo: `Talla: ${selectedSize}`,
+        precio: parsedPrice,
+        cantidad: quantity,
+        imagen: selectedProduct.image,
+      });
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      closeProduct();
+    }
   };
 
   return (
@@ -162,9 +185,11 @@ export default function HomePage() {
           </Link>
           <Link href="/carrito" className="relative hover:text-[#D3AB80] transition-colors hover:scale-110 transform duration-200">
             <ShoppingBag size={22} strokeWidth={2} />
-            <span className="absolute -top-2 -right-2 bg-[#D3AB80] text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
-              2
-            </span>
+            {totalCartItems > 0 && (
+              <span className="absolute -top-2 -right-2 bg-[#D3AB80] text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
+                {totalCartItems}
+              </span>
+            )}
           </Link>
         </div>
       </div>
@@ -251,7 +276,10 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-auto pt-6">
-                  <button className="w-full bg-[#D3AB80] hover:bg-[#c2986b] text-[#fdfbf9] py-4 rounded-xl text-lg font-medium transition-colors shadow-lg shadow-[#D3AB80]/20">
+                  <button
+                    onClick={handleAddToCart}
+                    className="w-full bg-[#D3AB80] hover:bg-[#c2986b] text-[#fdfbf9] py-4 rounded-xl text-lg font-medium transition-colors shadow-lg shadow-[#D3AB80]/20"
+                  >
                     Añadir al Carrito
                   </button>
                 </div>
@@ -261,6 +289,20 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
+      {/* TOAST NOTIFICATION */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-[#472825] text-white px-6 py-3 rounded-full shadow-lg z-50 flex items-center gap-2"
+          >
+            <ShoppingBag size={18} />
+            <span>¡Joyas agregadas con éxito!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

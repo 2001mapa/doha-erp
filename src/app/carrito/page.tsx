@@ -1,16 +1,8 @@
 "use client";
 
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { Plus, Minus, Trash2, MapPin, CreditCard } from "lucide-react";
-
-type Product = {
-  id: number;
-  nombre: string;
-  atributo: string;
-  precio: number;
-  cantidad: number;
-  imagen: string;
-};
+import { useCart } from "../../context/CartContext";
 
 type FormErrors = {
   nombre?: string;
@@ -21,32 +13,15 @@ type FormErrors = {
 };
 
 export default function CarritoPage() {
-  const [productos, setProductos] = useState<Product[]>([
-    {
-      id: 1,
-      nombre: "Cadena Mónaco 3mm",
-      atributo: "Largo: 45cm",
-      precio: 60000,
-      cantidad: 2,
-      imagen: "/placeholder.jpg",
-    },
-    {
-      id: 2,
-      nombre: "Pulsera Esclava",
-      atributo: "Talla: Única",
-      precio: 45000,
-      cantidad: 1,
-      imagen: "/placeholder.jpg",
-    },
-    {
-      id: 3,
-      nombre: "Anillo Sello de Oro",
-      atributo: "Talla: 8",
-      precio: 80000,
-      cantidad: 1,
-      imagen: "/placeholder.jpg",
-    },
-  ]);
+  const { cartItems: productos, updateQuantity: handleQuantityChange, removeFromCart: handleRemoveItem } = useCart();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -57,22 +32,6 @@ export default function CarritoPage() {
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-
-  const handleQuantityChange = (id: number, delta: number) => {
-    setProductos((prev) =>
-      prev.map((p) => {
-        if (p.id === id) {
-          const nuevaCantidad = p.cantidad + delta;
-          return { ...p, cantidad: nuevaCantidad > 0 ? nuevaCantidad : 1 };
-        }
-        return p;
-      })
-    );
-  };
-
-  const handleRemoveItem = (id: number) => {
-    setProductos((prev) => prev.filter((p) => p.id !== id));
-  };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -127,6 +86,14 @@ export default function CarritoPage() {
 
   const totalPago = subtotal - descuento + envio;
 
+  const isFormValid = formData.nombre.length >= 3 &&
+                      /^[0-9]+$/.test(formData.documento) &&
+                      formData.direccion.length > 0 &&
+                      formData.ciudad.length > 0 &&
+                      /^[0-9]{10,}$/.test(formData.telefono);
+
+  if (!mounted) return null;
+
   return (
     <div className="min-h-screen bg-[#fdfbf9] text-[#472825] py-10">
       <div className="max-w-7xl mx-auto p-6">
@@ -151,15 +118,15 @@ export default function CarritoPage() {
                   </div>
                   <div className="flex flex-col items-center sm:items-end gap-2 w-full sm:w-auto mt-4 sm:mt-0">
                     <div className="flex items-center border border-[#e6dfd8] rounded">
-                      <button onClick={() => handleQuantityChange(producto.id, -1)} className="p-2 hover:bg-[#f5f1ec] transition text-[#472825]">
+                      <button onClick={() => handleQuantityChange(producto.id, producto.atributo, -1)} className="p-2 hover:bg-[#f5f1ec] transition text-[#472825]">
                         <Minus className="w-4 h-4" />
                       </button>
                       <span className="w-8 text-center text-sm font-medium">{producto.cantidad}</span>
-                      <button onClick={() => handleQuantityChange(producto.id, 1)} className="p-2 hover:bg-[#f5f1ec] transition text-[#472825]">
+                      <button onClick={() => handleQuantityChange(producto.id, producto.atributo, 1)} className="p-2 hover:bg-[#f5f1ec] transition text-[#472825]">
                         <Plus className="w-4 h-4" />
                       </button>
                     </div>
-                    <button onClick={() => handleRemoveItem(producto.id)} className="text-red-500 hover:text-red-700 transition flex items-center text-sm mt-1">
+                    <button onClick={() => handleRemoveItem(producto.id, producto.atributo)} className="text-red-500 hover:text-red-700 transition flex items-center text-sm mt-1">
                       <Trash2 className="w-4 h-4 mr-1" /> Eliminar
                     </button>
                   </div>
@@ -272,7 +239,12 @@ export default function CarritoPage() {
 
               <button
                 onClick={handleSubmit}
-                className="w-full mt-8 bg-[#D3AB80] hover:bg-[#b8956e] text-white py-3.5 px-4 rounded-lg font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"
+                disabled={!isFormValid}
+                className={`w-full mt-8 py-3.5 px-4 rounded-lg font-bold transition-colors flex items-center justify-center gap-2 shadow-sm ${
+                  isFormValid
+                    ? "bg-[#D3AB80] hover:bg-[#b8956e] text-white"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
               >
                 <CreditCard className="w-5 h-5" /> Proceder al Pago
               </button>

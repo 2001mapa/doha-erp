@@ -1,0 +1,12 @@
+
+> doha-erp@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 535ms
+
+○ Compiling / ...
+ GET / 200 in 6.7s (next.js: 6.1s, application-code: 580ms)
+ GET /carrito 200 in 1138ms (next.js: 1094ms, application-code: 44ms)

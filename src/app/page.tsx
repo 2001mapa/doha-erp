@@ -160,12 +160,12 @@ export default function HomePage() {
           <Link href="/login" className="hover:text-[#D3AB80] transition-colors hover:scale-110 transform duration-200">
             <User size={22} strokeWidth={2} />
           </Link>
-          <button className="relative hover:text-[#D3AB80] transition-colors hover:scale-110 transform duration-200">
+          <Link href="/carrito" className="relative hover:text-[#D3AB80] transition-colors hover:scale-110 transform duration-200">
             <ShoppingBag size={22} strokeWidth={2} />
             <span className="absolute -top-2 -right-2 bg-[#D3AB80] text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
               2
             </span>
-          </button>
+          </Link>
         </div>
       </div>
 

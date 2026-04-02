@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Search, User, ShoppingBag, Eye, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
 // Mock Data
 const PRODUCTS = [
@@ -156,9 +157,9 @@ export default function HomePage() {
           <button className="hover:text-[#D3AB80] transition-colors hover:scale-110 transform duration-200">
             <Search size={22} strokeWidth={2} />
           </button>
-          <button className="hover:text-[#D3AB80] transition-colors hover:scale-110 transform duration-200">
+          <Link href="/login" className="hover:text-[#D3AB80] transition-colors hover:scale-110 transform duration-200">
             <User size={22} strokeWidth={2} />
-          </button>
+          </Link>
           <button className="relative hover:text-[#D3AB80] transition-colors hover:scale-110 transform duration-200">
             <ShoppingBag size={22} strokeWidth={2} />
             <span className="absolute -top-2 -right-2 bg-[#D3AB80] text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">

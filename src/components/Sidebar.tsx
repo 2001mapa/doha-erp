@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   Package,
   Users,
+  UserCheck,
   FileText,
   Wallet,
   ClipboardList,
@@ -63,7 +64,18 @@ const menuItems = [
   {
     name: "Gestión de Terceros",
     icon: <Users size={20} />,
-    href: "/admin/terceros",
+    subItems: [
+      {
+        name: "Terceros",
+        icon: <Users size={16} />,
+        href: "/admin/terceros/general",
+      },
+      {
+        name: "Vendedores",
+        icon: <UserCheck size={16} />,
+        href: "/admin/terceros/vendedores",
+      },
+    ],
   },
   {
     name: "Contabilidad",
@@ -109,6 +121,8 @@ export const DohaSidebar = () => {
 
   const filteredMenuItems = menuItems.filter(item => {
     if (user?.rol === "Vendedor") {
+      // Requisito estricto: Todo el bloque de "Gestión de Terceros" debe estar oculto
+      if (item.name === "Gestión de Terceros") return false;
       return item.name === "Facturación";
     }
     return true; // Administrador y Supervisor ven todo

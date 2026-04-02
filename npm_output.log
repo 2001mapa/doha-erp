@@ -5,13 +5,17 @@
 ▲ Next.js 16.2.1 (Turbopack)
 - Local:         http://localhost:3000
 - Network:       http://192.168.0.2:3000
-✓ Ready in 567ms
+✓ Ready in 573ms
 
-○ Compiling /admin ...
- GET /admin 200 in 5.9s (next.js: 5.4s, application-code: 476ms)
- GET /admin/login 200 in 871ms (next.js: 813ms, application-code: 58ms)
- GET /admin/pos 200 in 942ms (next.js: 853ms, application-code: 88ms)
- GET /admin/login 200 in 103ms (next.js: 6ms, application-code: 97ms)
- GET /admin 200 in 86ms (next.js: 5ms, application-code: 81ms)
- GET /admin/login 200 in 41ms (next.js: 4ms, application-code: 37ms)
- GET /admin 200 in 35ms (next.js: 4ms, application-code: 31ms)
+○ Compiling /admin/terceros/general ...
+ GET /admin/terceros/general 200 in 8.0s (next.js: 7.4s, application-code: 671ms)
+ GET /admin/login 200 in 1589ms (next.js: 1536ms, application-code: 54ms)
+ GET /admin/login 200 in 111ms (next.js: 5ms, application-code: 105ms)
+ GET /admin/login 200 in 89ms (next.js: 5ms, application-code: 84ms)
+ GET /admin 200 in 689ms (next.js: 643ms, application-code: 46ms)
+ GET /admin/terceros/general 200 in 81ms (next.js: 4ms, application-code: 77ms)
+ GET /admin/login 200 in 35ms (next.js: 5ms, application-code: 31ms)
+ GET /admin/login 200 in 81ms (next.js: 4ms, application-code: 76ms)
+ GET /admin 200 in 40ms (next.js: 5ms, application-code: 35ms)
+ GET /admin/terceros/general 200 in 40ms (next.js: 5ms, application-code: 35ms)
+ GET /admin/terceros/vendedores 200 in 1205ms (next.js: 1077ms, application-code: 128ms)

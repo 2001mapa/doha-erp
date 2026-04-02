@@ -9,14 +9,14 @@ import {
   CheckCircle2,
   XCircle,
   X,
-  MapPin,
+  Lock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Datos iniciales de prueba
 const mockBodegasIniciales = [
-  { id: 1, nombre: "Caja Fuerte Principal", ubicacion: "Oficina Interna", estado: "Activo" },
-  { id: 2, nombre: "Vitrina Exhibición", ubicacion: "Local Comercial", estado: "Activo" }
+  { id: 1, codigo: "01", descripcion: "CAJA FUERTE PRINCIPAL", sucursal: "Sede Medellín", tercero: "Carlos Pérez (Admin)", cuentaCxc: "No Aplica", cuentaCxp: "No Aplica", activo: true, restringido: true },
+  { id: 2, codigo: "02", descripcion: "VITRINA EXHIBICIÓN", sucursal: "Sede Medellín", tercero: "Juan Gómez (Vendedor)", cuentaCxc: "130505 - Clientes Nacionales", cuentaCxp: "220501 - Proveedores Nacionales", activo: true, restringido: false }
 ];
 
 export default function BodegasPage() {
@@ -29,13 +29,18 @@ export default function BodegasPage() {
 
   const [formData, setFormData] = useState({
     id: 0,
-    nombre: "",
-    ubicacion: "",
-    estado: "Activo",
+    codigo: "",
+    descripcion: "",
+    sucursal: "Sede Medellín",
+    tercero: "",
+    cuentaCxc: "No Aplica",
+    cuentaCxp: "No Aplica",
+    activo: true,
+    restringido: false,
   });
 
   const handleOpenCreate = () => {
-    setFormData({ id: 0, nombre: "", ubicacion: "", estado: "Activo" });
+    setFormData({ id: 0, codigo: "", descripcion: "", sucursal: "Sede Medellín", tercero: "", cuentaCxc: "No Aplica", cuentaCxp: "No Aplica", activo: true, restringido: false });
     setIsEditing(false);
     setIsModalOpen(true);
   };
@@ -75,15 +80,24 @@ export default function BodegasPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type } = e.target;
+    if (type === "checkbox") {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData({ ...formData, [name]: checked });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const bodegasFiltradas = bodegas.filter((b) => {
     const coincideBusqueda =
-      b.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.ubicacion.toLowerCase().includes(searchTerm.toLowerCase());
+      b.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.sucursal.toLowerCase().includes(searchTerm.toLowerCase());
     const coincideEstado =
-      filtroEstado === "Todos" || b.estado === filtroEstado;
+      filtroEstado === "Todos" ||
+      (filtroEstado === "Activos" && b.activo) ||
+      (filtroEstado === "Inactivos" && !b.activo);
     return coincideBusqueda && coincideEstado;
   });
 
@@ -97,66 +111,73 @@ export default function BodegasPage() {
               Panel de Control / Productos /{" "}
               <span className="text-[#D3AB80] font-bold">Bodegas</span>
             </p>
-            <h1 className="text-3xl font-black text-[#472825]">
+            <h1 className="text-3xl font-black text-[#472825] mb-4">
               Gestión de Bodegas
             </h1>
-          </div>
-          <button
-            onClick={handleOpenCreate}
-            className="bg-[#472825] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-black transition-all shadow-md flex items-center gap-2 group"
-          >
-            <Plus
-              size={18}
-              className="group-hover:rotate-90 transition-transform"
-            />
-            Nueva Bodega
-          </button>
-        </div>
-
-        {/* Búsqueda y Filtros */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="relative w-full sm:w-96">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              size={18}
-            />
-            <input
-              type="text"
-              placeholder="Buscar por nombre o ubicación..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:bg-white focus:border-[#D3AB80] outline-none transition-all text-[#472825]"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                onClick={handleOpenCreate}
+                className="bg-[#D3AB80] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#b8956b] transition-all shadow-md flex items-center gap-2 group"
+              >
+                <Plus
+                  size={18}
+                  className="group-hover:rotate-90 transition-transform"
+                />
+                Nueva Bodega
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <span className="text-sm font-bold text-[#472825]">Estado:</span>
-            <select
-              value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}
-              className="border border-gray-200 bg-gray-50 text-[#472825] rounded-xl p-2.5 text-sm font-medium focus:ring-[#D3AB80] focus:border-[#D3AB80] outline-none"
-            >
-              <option>Todos</option>
-              <option>Activos</option>
-              <option>Inactivos</option>
-            </select>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="relative w-full sm:w-80">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                size={18}
+              />
+              <input
+                type="text"
+                placeholder="Buscar bodega..."
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:bg-white focus:border-[#D3AB80] outline-none transition-all text-[#472825] shadow-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <span className="text-sm font-bold text-[#472825]">Estado:</span>
+              <select
+                value={filtroEstado}
+                onChange={(e) => setFiltroEstado(e.target.value)}
+                className="border border-gray-200 bg-white text-[#472825] rounded-xl p-2.5 text-sm font-medium focus:ring-[#D3AB80] focus:border-[#D3AB80] outline-none shadow-sm"
+              >
+                <option>Todos</option>
+                <option>Activos</option>
+                <option>Inactivos</option>
+              </select>
+            </div>
           </div>
         </div>
 
         {/* Tabla */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mt-6">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50/80 border-b border-gray-200">
-                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider w-1/4">
-                    Nombre
-                  </th>
-                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider w-2/4">
-                    Ubicación
+                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider">
+                    Código
                   </th>
                   <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider">
-                    Estado
+                    Descripción
+                  </th>
+                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider">
+                    Sucursal
+                  </th>
+                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider text-center">
+                    Activo
+                  </th>
+                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider text-center">
+                    Restringido
                   </th>
                   <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider text-center">
                     Acciones
@@ -171,35 +192,46 @@ export default function BodegasPage() {
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="p-5">
+                        <span className="text-sm font-bold text-gray-500">
+                          {bodega.codigo}
+                        </span>
+                      </td>
+                      <td className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-[#D3AB80]/20 flex items-center justify-center text-[#472825]">
                             <Warehouse size={18} />
                           </div>
                           <span className="text-sm font-black text-[#472825]">
-                            {bodega.nombre}
+                            {bodega.descripcion}
                           </span>
                         </div>
                       </td>
                       <td className="p-5">
                         <span className="text-sm font-medium text-gray-600">
-                          {bodega.ubicacion}
+                          {bodega.sucursal}
                         </span>
                       </td>
-                      <td className="p-5">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                            bodega.estado === "Activo"
-                              ? "bg-green-50 text-green-700 border border-green-200"
-                              : "bg-red-50 text-red-700 border border-red-200"
-                          }`}
-                        >
-                          {bodega.estado === "Activo" ? (
-                            <CheckCircle2 size={14} />
+                      <td className="p-5 text-center">
+                        <div className="flex justify-center">
+                          {bodega.activo ? (
+                            <CheckCircle2 className="text-green-500" size={20} />
                           ) : (
-                            <XCircle size={14} />
+                            <XCircle className="text-red-500" size={20} />
                           )}
-                          {bodega.estado}
-                        </span>
+                        </div>
+                      </td>
+                      <td className="p-5 text-center">
+                        <div className="flex justify-center">
+                           {bodega.restringido ? (
+                            <div title="Solo administradores">
+                              <Lock className="text-red-400" size={18} />
+                            </div>
+                          ) : (
+                            <div title="Acceso general">
+                              <CheckCircle2 className="text-green-500" size={20} />
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="p-5">
                         <div className="flex justify-center gap-3">
@@ -224,7 +256,7 @@ export default function BodegasPage() {
                 ) : (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={6}
                       className="p-8 text-center text-gray-500 font-medium"
                     >
                       No se encontraron bodegas.
@@ -252,7 +284,7 @@ export default function BodegasPage() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
-                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-full max-w-md bg-white rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden border border-gray-100"
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-full max-w-3xl bg-white rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden border border-gray-100"
               >
                 <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                   <div>
@@ -260,7 +292,7 @@ export default function BodegasPage() {
                       {isEditing ? "Editar Bodega" : "Registrar Bodega"}
                     </h2>
                     <p className="text-xs font-medium text-gray-500 mt-1">
-                      Administra los lugares de almacenamiento.
+                      Administra los lugares de almacenamiento e integración contable.
                     </p>
                   </div>
                   <button
@@ -271,90 +303,150 @@ export default function BodegasPage() {
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-8 space-y-5">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                      Nombre
-                    </label>
-                    <div className="relative">
-                      <Warehouse
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
+                <form onSubmit={handleSubmit} className="p-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    {/* Fila 1 */}
+                    <div className="space-y-1.5 md:col-span-1">
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                        Código
+                      </label>
                       <input
                         type="text"
-                        name="nombre"
-                        value={formData.nombre}
+                        name="codigo"
+                        value={formData.codigo}
                         onChange={handleChange}
                         required
-                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                        placeholder="Ej. Caja Fuerte Principal..."
+                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                        placeholder="Ej. 03"
                       />
                     </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                      Ubicación
-                    </label>
-                    <div className="relative">
-                      <MapPin
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
+                    <div className="space-y-1.5 md:col-span-2">
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                        Descripción
+                      </label>
                       <input
                         type="text"
-                        name="ubicacion"
-                        value={formData.ubicacion}
+                        name="descripcion"
+                        value={formData.descripcion}
                         onChange={handleChange}
                         required
-                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                        placeholder="Ej. Oficina Interna, Local..."
+                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                        placeholder="Ej. BODEGA TALLER"
                       />
                     </div>
-                  </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                      Estado
-                    </label>
-                    <div className="relative">
-                      {formData.estado === "Activo" ? (
-                        <CheckCircle2
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-green-500"
-                          size={18}
-                        />
-                      ) : (
-                        <XCircle
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500"
-                          size={18}
-                        />
-                      )}
+                    {/* Fila 2 */}
+                    <div className="space-y-1.5 md:col-span-1 md:col-start-1">
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                        Sucursal
+                      </label>
                       <select
-                        name="estado"
-                        value={formData.estado}
+                        name="sucursal"
+                        value={formData.sucursal}
                         onChange={handleChange}
-                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825] appearance-none"
+                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
                       >
-                        <option value="Activo">Activo</option>
-                        <option value="Inactivo">Inactivo</option>
+                        <option value="Sede Medellín">Sede Medellín</option>
+                        <option value="Sede Envigado">Sede Envigado</option>
                       </select>
                     </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                        Tercero Responsable
+                      </label>
+                      <input
+                        list="terceros"
+                        name="tercero"
+                        value={formData.tercero}
+                        onChange={handleChange}
+                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                        placeholder="Buscar tercero..."
+                      />
+                      <datalist id="terceros">
+                        <option value="Carlos Pérez (Admin)" />
+                        <option value="Juan Gómez (Vendedor)" />
+                      </datalist>
+                    </div>
+
+                    {/* Fila 3: Integración Contable */}
+                    <div className="space-y-1.5 md:col-span-1 md:col-start-1 md:col-end-3">
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                        Cuenta CXC
+                      </label>
+                      <select
+                        name="cuentaCxc"
+                        value={formData.cuentaCxc}
+                        onChange={handleChange}
+                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                      >
+                        <option value="No Aplica">No Aplica</option>
+                        <option value="130505 - Clientes Nacionales">130505 - Clientes Nacionales</option>
+                        <option value="13102005 - Particulares">13102005 - Particulares</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5 md:col-span-1 md:col-start-3 md:col-end-4">
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                        Cuenta CXP
+                      </label>
+                      <select
+                        name="cuentaCxp"
+                        value={formData.cuentaCxp}
+                        onChange={handleChange}
+                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                      >
+                        <option value="No Aplica">No Aplica</option>
+                        <option value="220501 - Proveedores Nacionales">220501 - Proveedores Nacionales</option>
+                      </select>
+                    </div>
+
+                    {/* Fila 4: Switches/Checkboxes */}
+                    <div className="md:col-span-3 flex gap-8 items-center mt-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            name="activo"
+                            checked={formData.activo}
+                            onChange={handleChange}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                        </div>
+                        <span className="text-sm font-bold text-[#472825]">Bodega Activa</span>
+                      </label>
+
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            name="restringido"
+                            checked={formData.restringido}
+                            onChange={handleChange}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                        </div>
+                        <div className="flex flex-col">
+                           <span className="text-sm font-bold text-[#472825]">Bodega Restringida</span>
+                           <span className="text-[10px] text-red-500 font-medium">Solo administradores pueden verla</span>
+                        </div>
+                      </label>
+                    </div>
                   </div>
 
-                  <div className="pt-6 mt-2 border-t border-gray-100 flex items-center justify-end gap-3">
+                  <div className="pt-6 mt-6 border-t border-gray-100 flex items-center justify-end gap-3">
                     <button
                       type="button"
                       onClick={() => setIsModalOpen(false)}
-                      className="px-5 py-2.5 text-sm font-bold text-gray-500 hover:text-[#472825] transition-colors"
+                      className="px-5 py-2.5 text-sm font-bold bg-gray-100 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
-                      className="bg-[#472825] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-black transition-all shadow-md"
+                      className="bg-[#D3AB80] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#b8956b] transition-all shadow-md"
                     >
-                      {isEditing ? "Guardar" : "Registrar"}
+                      {isEditing ? "Guardar" : "Guardar"}
                     </button>
                   </div>
                 </form>

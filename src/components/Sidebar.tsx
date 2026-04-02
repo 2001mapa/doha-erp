@@ -23,6 +23,13 @@ import {
   ChevronLeft,
   ShoppingBag,
   LogOut,
+  Undo2,
+  CircleDollarSign,
+  ClipboardCheck,
+  Search,
+  FileSpreadsheet,
+  Boxes,
+  ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
 import { useAdminAuth } from "../context/AdminAuthContext";
@@ -133,7 +140,38 @@ const menuItems = [
   {
     name: "Inventario",
     icon: <ClipboardList size={20} />,
-    href: "/admin/inventory",
+    subItems: [
+      {
+        name: "Compras",
+        icon: <ShoppingCart size={16} />,
+        href: "/admin/inventario/compras",
+      },
+      {
+        name: "Devoluciones",
+        icon: <Undo2 size={16} />,
+        href: "/admin/inventario/devoluciones",
+      },
+      {
+        name: "Costo Producto",
+        icon: <CircleDollarSign size={16} />,
+        href: "/admin/inventario/costo",
+      },
+      {
+        name: "Inventario Físico",
+        icon: <ClipboardCheck size={16} />,
+        href: "/admin/inventario/fisico",
+      },
+      {
+        name: "Consulta Unidades",
+        icon: <Search size={16} />,
+        href: "/admin/inventario/consulta",
+      },
+      {
+        name: "Kardex",
+        icon: <FileSpreadsheet size={16} />,
+        href: "/admin/inventario/kardex",
+      },
+    ],
   },
   {
     name: "Facturación",
@@ -173,6 +211,7 @@ export const DohaSidebar = () => {
       // Seguridad: Módulo "Contabilidad" oculto para el rol Vendedor
       if (item.name === "Contabilidad") return false;
       if (item.name === "Cartera") return false;
+      if (item.name === "Inventario") return false;
 
       return item.name === "Facturación";
     }
@@ -270,7 +309,7 @@ export const DohaSidebar = () => {
                   </div>
                 </div>
               ) : (
-                <Link href={item.href} onClick={() => setIsSidebarOpen(false)}>
+                <Link href={("href" in item ? item.href : "#") as string} onClick={() => setIsSidebarOpen(false)}>
                   <button className="w-full flex items-center justify-between p-3 rounded-xl transition-all text-zinc-100 hover:bg-white/10 hover:text-amber-500 focus:bg-amber-500/10 focus:text-amber-500">
                     <div className="flex items-center gap-3">
                       {item.icon}

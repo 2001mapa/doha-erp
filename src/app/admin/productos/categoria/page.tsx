@@ -6,39 +6,38 @@ import {
   Edit,
   Trash2,
   Tags,
-  CheckCircle2,
-  XCircle,
   X,
-  Type,
-  AlignLeft,
+  FileSpreadsheet,
+  Download,
+  Upload,
+  ChevronDown
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Datos iniciales de prueba
 const mockCategoriasIniciales = [
-  { id: 1, nombre: "Cadenas", descripcion: "Cadenas de todos los tejidos (Mónaco, Cubana, etc.)", estado: "Activo" },
-  { id: 2, nombre: "Pulseras", descripcion: "Pulseras y esclavas para hombre y mujer", estado: "Activo" },
-  { id: 3, nombre: "Anillos", descripcion: "Anillos de compromiso, argollas y casuales", estado: "Activo" },
-  { id: 4, nombre: "Topos", descripcion: "Aretes pequeños y topos", estado: "Activo" }
+  { id: 1, codigo: "01", abreviatura: "CAD", descripcion: "CADENAS ORO LAMINADO", tipoVenta: "Joyas y Relojes - Gravado 19%" },
+  { id: 2, codigo: "02", abreviatura: "PUL", descripcion: "PULSERAS Y ESCLAVAS", tipoVenta: "Joyas y Relojes - Gravado 19%" },
+  { id: 3, codigo: "03", abreviatura: "TOP", descripcion: "TOPOS Y ARETES", tipoVenta: "Joyas y Relojes - Gravado 19%" },
+  { id: 4, codigo: "04", abreviatura: "EMP", descripcion: "EMPAQUES Y CAJAS", tipoVenta: "Insumos - Sin IVA" }
 ];
 
 export default function CategoriasPage() {
   const [categorias, setCategorias] = useState(mockCategoriasIniciales);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("Todos");
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   const [formData, setFormData] = useState({
     id: 0,
-    nombre: "",
+    codigo: "",
+    abreviatura: "",
     descripcion: "",
-    estado: "Activo",
+    tipoVenta: "Joyas y Relojes - Gravado 19%",
   });
 
   const handleOpenCreate = () => {
-    setFormData({ id: 0, nombre: "", descripcion: "", estado: "Activo" });
+    setFormData({ id: 0, codigo: "", abreviatura: "", descripcion: "", tipoVenta: "Joyas y Relojes - Gravado 19%" });
     setIsEditing(false);
     setIsModalOpen(true);
   };
@@ -82,12 +81,7 @@ export default function CategoriasPage() {
   };
 
   const categoriasFiltradas = categorias.filter((c) => {
-    const coincideBusqueda =
-      c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
-    const coincideEstado =
-      filtroEstado === "Todos" || c.estado === filtroEstado;
-    return coincideBusqueda && coincideEstado;
+    return c.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   return (
@@ -116,33 +110,45 @@ export default function CategoriasPage() {
           </button>
         </div>
 
-        {/* Búsqueda y Filtros */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="relative w-full sm:w-96">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              size={18}
-            />
+        {/* Barra Superior de Herramientas (Header Actions) */}
+        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+          {/* Lado izquierdo: Botón desplegable Excel */}
+          <div className="relative group">
+            <button className="flex items-center gap-2 bg-gray-50 border border-gray-200 text-[#472825] px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-gray-100 transition-all">
+              <FileSpreadsheet size={18} className="text-green-600" />
+              Excel
+              <ChevronDown size={16} />
+            </button>
+            <div className="absolute left-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+              <button
+                onClick={() => alert("Función de Excel en desarrollo")}
+                className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium text-[#472825] hover:bg-gray-50 rounded-t-xl"
+              >
+                <Download size={16} />
+                Descargar Excel
+              </button>
+              <button
+                onClick={() => alert("Función de Excel en desarrollo")}
+                className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium text-[#472825] hover:bg-gray-50 rounded-b-xl border-t border-gray-100"
+              >
+                <Upload size={16} />
+                Cargar Excel
+              </button>
+            </div>
+          </div>
+
+          {/* Lado derecho: Búsqueda */}
+          <div className="flex w-full sm:w-auto">
             <input
               type="text"
-              placeholder="Buscar por nombre o descripción..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:bg-white focus:border-[#D3AB80] outline-none transition-all text-[#472825]"
+              placeholder="Buscar por descripción..."
+              className="w-full sm:w-80 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-l-xl text-sm font-medium focus:bg-white focus:border-[#D3AB80] outline-none transition-all text-[#472825]"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-          </div>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <span className="text-sm font-bold text-[#472825]">Estado:</span>
-            <select
-              value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}
-              className="border border-gray-200 bg-gray-50 text-[#472825] rounded-xl p-2.5 text-sm font-medium focus:ring-[#D3AB80] focus:border-[#D3AB80] outline-none"
-            >
-              <option>Todos</option>
-              <option>Activos</option>
-              <option>Inactivos</option>
-            </select>
+            <button className="bg-[#D3AB80] text-white px-4 py-2.5 rounded-r-xl hover:bg-[#c29b70] transition-colors flex items-center justify-center">
+              <Search size={18} />
+            </button>
           </div>
         </div>
 
@@ -152,14 +158,17 @@ export default function CategoriasPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50/80 border-b border-gray-200">
-                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider w-1/4">
-                    Nombre
+                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider w-1/6">
+                    Código
                   </th>
-                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider w-2/4">
+                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider w-1/6">
+                    Abreviatura
+                  </th>
+                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider w-1/3">
                     Descripción
                   </th>
                   <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider">
-                    Estado
+                    Tipo de Venta
                   </th>
                   <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider text-center">
                     Acciones
@@ -179,9 +188,14 @@ export default function CategoriasPage() {
                             <Tags size={18} />
                           </div>
                           <span className="text-sm font-black text-[#472825]">
-                            {categoria.nombre}
+                            {categoria.codigo}
                           </span>
                         </div>
+                      </td>
+                      <td className="p-5">
+                        <span className="text-sm font-medium text-gray-600">
+                          {categoria.abreviatura}
+                        </span>
                       </td>
                       <td className="p-5">
                         <span className="text-sm font-medium text-gray-600">
@@ -189,19 +203,8 @@ export default function CategoriasPage() {
                         </span>
                       </td>
                       <td className="p-5">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                            categoria.estado === "Activo"
-                              ? "bg-green-50 text-green-700 border border-green-200"
-                              : "bg-red-50 text-red-700 border border-red-200"
-                          }`}
-                        >
-                          {categoria.estado === "Activo" ? (
-                            <CheckCircle2 size={14} />
-                          ) : (
-                            <XCircle size={14} />
-                          )}
-                          {categoria.estado}
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                          {categoria.tipoVenta}
                         </span>
                       </td>
                       <td className="p-5">
@@ -227,7 +230,7 @@ export default function CategoriasPage() {
                 ) : (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       className="p-8 text-center text-gray-500 font-medium"
                     >
                       No se encontraron categorías.
@@ -274,90 +277,86 @@ export default function CategoriasPage() {
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-8 space-y-5">
-                  <div className="space-y-1.5">
+                <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Código */}
+                  <div className="space-y-1.5 col-span-1">
                     <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                      Nombre
+                      Código
                     </label>
-                    <div className="relative">
-                      <Type
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
-                      <input
-                        type="text"
-                        name="nombre"
-                        value={formData.nombre}
-                        onChange={handleChange}
-                        required
-                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                        placeholder="Ej. Cadenas, Pulseras..."
-                      />
-                    </div>
+                    <input
+                      type="text"
+                      name="codigo"
+                      value={formData.codigo}
+                      onChange={handleChange}
+                      required
+                      className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                      placeholder="Ej. 05"
+                    />
                   </div>
 
-                  <div className="space-y-1.5">
+                  {/* Abreviatura */}
+                  <div className="space-y-1.5 col-span-1">
+                    <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                      Abreviatura
+                    </label>
+                    <input
+                      type="text"
+                      name="abreviatura"
+                      value={formData.abreviatura}
+                      onChange={handleChange}
+                      required
+                      className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                      placeholder="Ej. ANI"
+                    />
+                  </div>
+
+                  {/* Descripción */}
+                  <div className="space-y-1.5 md:col-span-2">
                     <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
                       Descripción
                     </label>
-                    <div className="relative">
-                      <AlignLeft
-                        className="absolute left-4 top-3 text-gray-400"
-                        size={18}
-                      />
-                      <textarea
-                        name="descripcion"
-                        value={formData.descripcion}
-                        onChange={handleChange}
-                        required
-                        rows={3}
-                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825] resize-none"
-                        placeholder="Ej. Descripción detallada de la categoría..."
-                      />
-                    </div>
+                    <input
+                      type="text"
+                      name="descripcion"
+                      value={formData.descripcion}
+                      onChange={handleChange}
+                      required
+                      className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                      placeholder="Ej. ANILLOS"
+                    />
                   </div>
 
-                  <div className="space-y-1.5">
+                  {/* Tipo Venta */}
+                  <div className="space-y-1.5 md:col-span-2">
                     <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                      Estado
+                      Tipo Venta
                     </label>
-                    <div className="relative">
-                      {formData.estado === "Activo" ? (
-                        <CheckCircle2
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-green-500"
-                          size={18}
-                        />
-                      ) : (
-                        <XCircle
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500"
-                          size={18}
-                        />
-                      )}
-                      <select
-                        name="estado"
-                        value={formData.estado}
-                        onChange={handleChange}
-                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825] appearance-none"
-                      >
-                        <option value="Activo">Activo</option>
-                        <option value="Inactivo">Inactivo</option>
-                      </select>
-                    </div>
+                    <select
+                      name="tipoVenta"
+                      value={formData.tipoVenta}
+                      onChange={handleChange}
+                      className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                    >
+                      <option value="Joyas y Relojes - Gravado 19%">Joyas y Relojes - Gravado 19%</option>
+                      <option value="Insumos - Sin IVA">Insumos - Sin IVA</option>
+                      <option value="Bienes Exentos">Bienes Exentos</option>
+                    </select>
                   </div>
 
-                  <div className="pt-6 mt-2 border-t border-gray-100 flex items-center justify-end gap-3">
+                  {/* Botones */}
+                  <div className="md:col-span-2 pt-6 mt-2 border-t border-gray-100 flex items-center justify-end gap-3">
                     <button
                       type="button"
                       onClick={() => setIsModalOpen(false)}
-                      className="px-5 py-2.5 text-sm font-bold text-gray-500 hover:text-[#472825] transition-colors"
+                      className="px-5 py-2.5 text-sm font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
-                      className="bg-[#472825] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-black transition-all shadow-md"
+                      className="bg-[#D3AB80] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#c29b70] transition-all shadow-md"
                     >
-                      {isEditing ? "Guardar" : "Crear"}
+                      {isEditing ? "Guardar" : "Guardar"}
                     </button>
                   </div>
                 </form>

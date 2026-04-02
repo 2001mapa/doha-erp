@@ -18,17 +18,17 @@ export default function PerfilPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fdfbf9] text-[#472825] p-6">
+    <div className="min-h-screen bg-[#fdfbf9] text-[#472825] px-4 py-8 pb-24">
       <div className="max-w-4xl mx-auto w-full">
         {/* Encabezado */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row items-center sm:justify-between mb-8 gap-4">
+          <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 text-center sm:text-left">
             <UserCircle className="w-16 h-16 text-[#D3AB80]" />
-            <h1 className="text-3xl font-semibold">Hola, Cliente Prueba</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold">Hola, Cliente Prueba</h1>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center space-x-2 text-sm font-medium text-red-500 hover:text-red-700 transition-colors"
+            className="flex items-center space-x-2 text-sm font-medium text-red-500 hover:bg-red-50 px-4 py-3 rounded-lg transition-colors min-h-[48px]"
           >
             <LogOut className="w-5 h-5" />
             <span>Cerrar Sesión</span>
@@ -63,28 +63,30 @@ export default function PerfilPage() {
             <div className="bg-white p-6 rounded-xl shadow-lg border border-[#fdfbf9]">
               <h2 className="text-xl font-semibold mb-4 border-b pb-2">Historial de Pedidos</h2>
               {mockPedidos.length > 0 ? (
-                <div className="space-y-4">
-                  {mockPedidos.map((pedido) => (
-                    <div key={pedido.id} className="border border-gray-100 p-4 rounded-lg hover:shadow-sm transition-shadow">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <span className="font-semibold text-lg block">{pedido.id}</span>
-                          <span className="text-sm text-gray-500">{pedido.fecha}</span>
+                <div className="overflow-x-auto hide-scrollbar w-full">
+                  <div className="space-y-4 min-w-[300px]">
+                    {mockPedidos.map((pedido) => (
+                      <div key={pedido.id} className="border border-gray-100 p-4 rounded-lg hover:shadow-sm transition-shadow">
+                        <div className="flex justify-between items-start mb-2 gap-4">
+                          <div>
+                            <span className="font-semibold text-base sm:text-lg block">{pedido.id}</span>
+                            <span className="text-sm text-gray-500">{pedido.fecha}</span>
+                          </div>
+                          <div className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                            pedido.estado === "Entregado" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
+                          }`}>
+                            {pedido.estado}
+                          </div>
                         </div>
-                        <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          pedido.estado === "Entregado" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
-                        }`}>
-                          {pedido.estado}
+                        <div className="text-sm text-gray-700 mb-2">
+                          <span className="font-medium">Artículos:</span> {pedido.items}
+                        </div>
+                        <div className="text-right font-semibold text-[#D3AB80] text-lg">
+                          ${pedido.total.toLocaleString("es-CO")}
                         </div>
                       </div>
-                      <div className="text-sm text-gray-700 mb-2">
-                        <span className="font-medium">Artículos:</span> {pedido.items}
-                      </div>
-                      <div className="text-right font-semibold text-[#D3AB80]">
-                        ${pedido.total.toLocaleString("es-CO")}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <p className="text-gray-500 text-sm">No tienes pedidos anteriores.</p>
@@ -94,10 +96,10 @@ export default function PerfilPage() {
         </div>
 
         {/* Botón de acción inferior */}
-        <div className="mt-8 flex justify-center">
+        <div className="mt-8 w-full">
           <Link
             href="/"
-            className="bg-[#D3AB80] text-white px-8 py-3 rounded-md font-medium hover:bg-[#c2986f] transition-colors"
+            className="bg-[#D3AB80] text-white w-full sm:w-auto px-8 py-4 rounded-xl font-medium hover:bg-[#c2986f] transition-colors shadow-md min-h-[56px] text-lg flex items-center justify-center sm:mx-auto sm:max-w-xs"
           >
             Ir a la tienda
           </Link>

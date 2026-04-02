@@ -87,7 +87,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#fdfbf9] text-[#472825] font-sans pb-24">
 
       {/* HEADER */}
-      <header className="py-12 text-center">
+      <header className="py-12 text-center px-4">
         <h1 className="text-6xl md:text-8xl tracking-widest" style={{ fontFamily: 'Playfair Display, serif', fontWeight: 600 }}>
           DOHA
         </h1>
@@ -97,14 +97,14 @@ export default function HomePage() {
       </header>
 
       {/* MAIN CONTAINER */}
-      <main className="max-w-6xl mx-auto w-full px-6">
+      <main className="max-w-6xl mx-auto w-full">
 
         {/* CATEGORIES ROW */}
-        <section className="flex overflow-x-auto gap-4 pb-4 mb-12 scrollbar-hide snap-x">
+        <section className="flex overflow-x-auto snap-x hide-scrollbar gap-3 px-4 pb-4 mb-12">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
-              className="whitespace-nowrap px-6 py-2 rounded-xl border border-[#D3AB80] text-[#472825] hover:bg-[#D3AB80] hover:text-[#fdfbf9] transition-all duration-300 text-sm tracking-wide snap-center"
+              className="whitespace-nowrap px-6 py-3 rounded-xl border border-[#D3AB80] text-[#472825] hover:bg-[#D3AB80] hover:text-[#fdfbf9] transition-all duration-300 text-sm tracking-wide snap-center min-h-[48px]"
             >
               {cat}
             </button>
@@ -112,7 +112,7 @@ export default function HomePage() {
         </section>
 
         {/* PRODUCTS GRID */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
+        <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 px-4 mb-20">
           {PRODUCTS.map((product) => (
             <div key={product.id} className="group cursor-pointer flex flex-col" onClick={() => openProduct(product)}>
               <div className="relative aspect-[4/5] overflow-hidden bg-gray-100 rounded-2xl mb-4">
@@ -128,14 +128,14 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              <h3 className="font-medium text-lg">{product.name}</h3>
-              <p className="text-[#D3AB80] font-semibold mt-1">{product.price}</p>
+              <h3 className="font-medium text-sm sm:text-lg leading-tight">{product.name}</h3>
+              <p className="text-[#D3AB80] font-semibold mt-1 text-sm sm:text-base">{product.price}</p>
             </div>
           ))}
         </section>
 
         {/* FOOTER */}
-        <footer className="grid grid-cols-1 md:grid-cols-4 gap-12 py-16 border-t border-[#D3AB80]/30 text-sm">
+        <footer className="grid grid-cols-1 md:grid-cols-4 gap-12 py-16 px-4 border-t border-[#D3AB80]/30 text-sm">
           <div>
             <h4 className="font-semibold mb-4 text-lg">Redes</h4>
             <div className="flex gap-4">
@@ -165,7 +165,7 @@ export default function HomePage() {
                 placeholder="Tu correo..."
                 className="w-full px-4 py-3 bg-transparent border border-[#D3AB80]/50 rounded-lg focus:outline-none focus:border-[#D3AB80]"
               />
-              <button className="bg-[#D3AB80] text-[#fdfbf9] px-4 py-3 rounded-lg hover:bg-[#c2986b] transition-colors font-medium">
+              <button className="bg-[#D3AB80] text-[#fdfbf9] px-4 py-3 rounded-lg hover:bg-[#c2986b] transition-colors font-medium min-h-[48px]">
                 Suscribirme
               </button>
             </div>
@@ -198,93 +198,90 @@ export default function HomePage() {
       <AnimatePresence>
         {selectedProduct && (
           <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={closeProduct}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
-            />
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-full w-full md:w-[500px] bg-[#fdfbf9] shadow-2xl z-50 overflow-y-auto flex flex-col"
-            >
-              <button
-                onClick={closeProduct}
-                className="absolute top-6 right-6 z-10 bg-white/80 backdrop-blur p-2 rounded-full text-[#472825] hover:bg-gray-100 transition-colors shadow-sm"
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="bg-[#fdfbf9] w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col relative"
               >
-                <X size={20} />
-              </button>
+                <button
+                  onClick={closeProduct}
+                  className="absolute top-4 right-4 z-10 bg-white/80 backdrop-blur p-2 rounded-full text-[#472825] hover:bg-gray-100 transition-colors shadow-sm min-h-[48px] min-w-[48px] flex items-center justify-center"
+                >
+                  <X size={20} />
+                </button>
 
-              <div className="relative h-[50vh] min-h-[400px] bg-gray-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={selectedProduct.image}
-                  alt={selectedProduct.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <div className="p-8 flex-1 flex flex-col">
-                <h2 className="text-3xl font-medium text-[#472825] mb-2 font-serif">{selectedProduct.name}</h2>
-                <p className="text-2xl text-[#D3AB80] font-semibold mb-6">{selectedProduct.price}</p>
-
-                <p className="text-gray-600 leading-relaxed mb-8">
-                  {selectedProduct.description}
-                </p>
-
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider mb-3">Talla / Tamaño</h3>
-                  <div className="flex gap-3">
-                    {["Pequeña", "Estándar", "Grande"].map(size => (
-                      <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
-                          selectedSize === size
-                            ? "border-[#472825] bg-[#472825] text-[#fdfbf9]"
-                            : "border-gray-300 text-gray-600 hover:border-[#D3AB80]"
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                <div className="overflow-y-auto hide-scrollbar flex-1 pb-20">
+                  <div className="relative aspect-square bg-gray-100 w-full">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={selectedProduct.image}
+                      alt={selectedProduct.name}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                </div>
 
-                <div className="mb-8">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider mb-3">Cantidad</h3>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                      <button
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition-colors"
-                      >-</button>
-                      <span className="w-10 text-center font-medium">{quantity}</span>
-                      <button
-                        onClick={() => setQuantity(Math.min(selectedProduct.stock, quantity + 1))}
-                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition-colors"
-                      >+</button>
+                  <div className="p-6">
+                    <h2 className="text-2xl font-medium text-[#472825] mb-2 font-serif leading-tight">{selectedProduct.name}</h2>
+                    <p className="text-xl text-[#D3AB80] font-semibold mb-4">{selectedProduct.price}</p>
+
+                    <p className="text-gray-600 text-sm leading-relaxed mb-6">
+                      {selectedProduct.description}
+                    </p>
+
+                    <div className="mb-6">
+                      <h3 className="text-xs font-semibold uppercase tracking-wider mb-3">Talla / Tamaño</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {["Pequeña", "Estándar", "Grande"].map(size => (
+                          <button
+                            key={size}
+                            onClick={() => setSelectedSize(size)}
+                            className={`px-4 py-3 rounded-lg border text-sm transition-colors min-h-[48px] ${
+                              selectedSize === size
+                                ? "border-[#472825] bg-[#472825] text-[#fdfbf9]"
+                                : "border-gray-300 text-gray-600 hover:border-[#D3AB80]"
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <span className="text-sm text-gray-500">
-                      {selectedProduct.stock} unidades disponibles
-                    </span>
+
+                    <div>
+                      <h3 className="text-xs font-semibold uppercase tracking-wider mb-3">Cantidad</h3>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden h-12">
+                          <button
+                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                            className="px-4 py-2 h-full text-gray-600 hover:bg-gray-100 transition-colors min-w-[48px] flex items-center justify-center"
+                          >-</button>
+                          <span className="w-10 text-center font-medium">{quantity}</span>
+                          <button
+                            onClick={() => setQuantity(Math.min(selectedProduct.stock, quantity + 1))}
+                            className="px-4 py-2 h-full text-gray-600 hover:bg-gray-100 transition-colors min-w-[48px] flex items-center justify-center"
+                          >+</button>
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {selectedProduct.stock} disp.
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-auto pt-6">
+                <div className="sticky bottom-0 bg-[#fdfbf9] p-4 border-t border-gray-100">
                   <button
                     onClick={handleAddToCart}
-                    className="w-full bg-[#D3AB80] hover:bg-[#c2986b] text-[#fdfbf9] py-4 rounded-xl text-lg font-medium transition-colors shadow-lg shadow-[#D3AB80]/20"
+                    className="w-full bg-[#D3AB80] hover:bg-[#c2986b] text-[#fdfbf9] py-4 rounded-xl text-lg font-medium transition-colors shadow-lg shadow-[#D3AB80]/20 min-h-[56px]"
                   >
                     Añadir al Carrito
                   </button>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>

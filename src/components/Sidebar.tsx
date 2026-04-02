@@ -15,8 +15,10 @@ import {
   CircleDot,
   ChevronLeft,
   ShoppingBag,
+  LogOut,
 } from "lucide-react";
 import Link from "next/link";
+import { useAdminAuth } from "../context/AdminAuthContext";
 
 const menuItems = [
   {
@@ -95,6 +97,7 @@ const menuItems = [
 export const DohaSidebar = () => {
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { user, logout } = useAdminAuth();
 
   const toggleSubmenu = (name: string) => {
     setOpenSubmenu(openSubmenu === name ? null : name);
@@ -103,6 +106,13 @@ export const DohaSidebar = () => {
   // Definimos las transiciones comunes para sincronizar perfectamente botón y panel
   const transitionClass =
     "transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]";
+
+  const filteredMenuItems = menuItems.filter(item => {
+    if (user?.rol === "Vendedor") {
+      return item.name === "Facturación";
+    }
+    return true; // Administrador y Supervisor ven todo
+  });
 
   return (
     <>
@@ -153,7 +163,7 @@ export const DohaSidebar = () => {
         </div>
 
         <nav className="flex-1 space-y-2 overflow-y-auto pr-2 scrollbar-none">
-          {menuItems.map((item) => (
+          {filteredMenuItems.map((item) => (
             <div key={item.name} className="group">
               {item.subItems ? (
                 <div>
@@ -207,6 +217,24 @@ export const DohaSidebar = () => {
             </div>
           ))}
         </nav>
+
+        {user && (
+          <div className="mt-auto pt-6 border-t border-zinc-800">
+            <div className="mb-4 px-2">
+              <p className="text-sm font-bold text-white">{user.nombre}</p>
+              <p className="text-xs text-zinc-400">{user.rol}</p>
+            </div>
+            <button
+              onClick={logout}
+              className="w-full flex items-center justify-between p-3 rounded-xl transition-all text-red-400 hover:bg-red-500/10 hover:text-red-300 focus:bg-red-500/10 focus:text-red-300"
+            >
+              <div className="flex items-center gap-3">
+                <LogOut size={20} />
+                <span className="font-semibold text-sm">Cerrar Sesión</span>
+              </div>
+            </button>
+          </div>
+        )}
       </aside>
     </>
   );

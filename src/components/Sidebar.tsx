@@ -13,6 +13,9 @@ import {
   ClipboardList,
   Receipt,
   ChevronDown,
+  Book,
+  Hash,
+  BarChart3,
   CircleDot,
   ChevronLeft,
   ShoppingBag,
@@ -79,8 +82,24 @@ const menuItems = [
   },
   {
     name: "Contabilidad",
-    icon: <FileText size={20} />,
-    href: "/admin/contabilidad",
+    icon: <Book size={20} />,
+    subItems: [
+      {
+        name: "Notas contables",
+        icon: <ClipboardList size={16} />,
+        href: "/admin/contabilidad/notas",
+      },
+      {
+        name: "PUC",
+        icon: <Hash size={16} />,
+        href: "/admin/contabilidad/puc",
+      },
+      {
+        name: "Reportes",
+        icon: <BarChart3 size={16} />,
+        href: "/admin/contabilidad/reportes",
+      },
+    ],
   },
   { name: "Cartera", icon: <Wallet size={20} />, href: "/admin/cartera" },
   {
@@ -123,6 +142,9 @@ export const DohaSidebar = () => {
     if (user?.rol === "Vendedor") {
       // Requisito estricto: Todo el bloque de "Gestión de Terceros" debe estar oculto
       if (item.name === "Gestión de Terceros") return false;
+      // Seguridad: Módulo "Contabilidad" oculto para el rol Vendedor
+      if (item.name === "Contabilidad") return false;
+
       return item.name === "Facturación";
     }
     return true; // Administrador y Supervisor ven todo

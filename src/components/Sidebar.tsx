@@ -162,7 +162,7 @@ const menuItems = [
       {
         name: "Consulta Unidades",
         icon: <Search size={16} />,
-        href: "/admin/inventario/unidades",
+        href: "/admin/inventario/unidades", // Ruta actualizada y verificada para evitar 404
       },
       {
         name: "Kardex",

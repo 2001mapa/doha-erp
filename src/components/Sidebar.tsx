@@ -107,7 +107,7 @@ const menuItems = [
       {
         name: "Reportes",
         icon: <BarChart3 size={16} />,
-        href: "/admin/contabilidad/reportes",
+        href: "/admin/contabilidad/reportes", // Ruta verificada
       },
     ],
   },

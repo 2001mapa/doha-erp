@@ -43,13 +43,13 @@ export default function ReportesPage() {
           <p className="text-sm text-zinc-500 mb-6 flex-grow">
             Resumen de comprobantes y documentos contables generados.
           </p>
-          <button
-            onClick={() => alert('Función de generar reporte en desarrollo')}
-            className="w-full py-3 rounded-xl font-bold text-white transition-colors"
+          <Link
+            href="/admin/contabilidad/reportes/contabilizacion"
+            className="w-full py-3 rounded-xl font-bold text-white transition-colors text-center block"
             style={{ backgroundColor: "#D3AB80" }}
           >
             Generar Reporte
-          </button>
+          </Link>
         </div>
 
         {/* Card 3: Balance General */}

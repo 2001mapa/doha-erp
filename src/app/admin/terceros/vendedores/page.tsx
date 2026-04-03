@@ -10,6 +10,7 @@ type Vendedor = {
   tercero: string;
   cVenta: number;
   cRecaudo: number;
+  vendedor: boolean;
   recaudador: boolean;
   atiende: boolean;
   permisos: boolean[];
@@ -24,6 +25,7 @@ const initialVendedores: Vendedor[] = [
     tercero: "98667545 - MIGUEL RESTREPO",
     cVenta: 0.0,
     cRecaudo: 0.0,
+    vendedor: false,
     recaudador: false,
     atiende: false,
     permisos: [false, false, false, false, false],
@@ -35,6 +37,7 @@ const initialVendedores: Vendedor[] = [
     tercero: "79887455 - FABER ARISTIZABAL",
     cVenta: 5.0,
     cRecaudo: 0.0,
+    vendedor: false,
     recaudador: false,
     atiende: false,
     permisos: [false, false, false, false, false],
@@ -61,6 +64,7 @@ export default function VendedoresPage() {
     tercero: TERCEROS_MOCK[0],
     cVenta: 0,
     cRecaudo: 0,
+    vendedor: false,
     recaudador: false,
     atiende: false,
     permisos: [false, false, false, false, false],
@@ -75,6 +79,7 @@ export default function VendedoresPage() {
       tercero: TERCEROS_MOCK[0],
       cVenta: 0,
       cRecaudo: 0,
+      vendedor: false,
       recaudador: false,
       atiende: false,
       permisos: [false, false, false, false, false],
@@ -132,7 +137,6 @@ export default function VendedoresPage() {
         {
           ...formData,
           id: Date.now().toString(),
-          codigo: Math.floor(Math.random() * 1000).toString(),
         },
       ]);
     }
@@ -311,7 +315,22 @@ export default function VendedoresPage() {
                   className="space-y-8"
                 >
                   {/* Fila 1 (Identificación) */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="col-span-1 space-y-1.5">
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                        Código
+                      </label>
+                      <input
+                        type="text"
+                        name="codigo"
+                        value={formData.codigo}
+                        onChange={handleChange}
+                        required
+                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                        placeholder="Ej. 101"
+                      />
+                    </div>
+
                     <div className="col-span-1 space-y-1.5">
                       <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
                         Descripción
@@ -348,7 +367,33 @@ export default function VendedoresPage() {
 
                   {/* Fila 2 (Comisiones y Roles) */}
                   <div className="border border-gray-200 rounded-2xl p-6 bg-gray-50/30">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
+                      <div className="flex flex-col items-center justify-end pb-3">
+                        <label className="flex flex-col items-center gap-2 cursor-pointer group">
+                          <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
+                            Vendedor
+                          </span>
+                          <div
+                            className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${
+                              formData.vendedor
+                                ? "bg-[#D3AB80] border-[#D3AB80]"
+                                : "bg-white border-gray-300 group-hover:border-[#D3AB80]"
+                            }`}
+                          >
+                            {formData.vendedor && (
+                              <Check size={14} className="text-white" />
+                            )}
+                          </div>
+                          <input
+                            type="checkbox"
+                            name="vendedor"
+                            checked={formData.vendedor}
+                            onChange={handleChange}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+
                       <div className="space-y-1.5">
                         <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
                           Comisión en Venta
@@ -453,34 +498,46 @@ export default function VendedoresPage() {
                   <div className="flex items-start gap-8 mt-6">
                     <div className="w-1/3">
                       <h3 className="text-sm font-bold text-[#472825]">
-                        Puntos Específicos
+                        Permisos y Accesos
                       </h3>
                     </div>
-                    <div className="flex flex-col gap-3">
-                      {formData.permisos.map((checked, index) => (
-                        <label
-                          key={index}
-                          className="flex items-center cursor-pointer group"
-                        >
-                          <div
-                            className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-                              checked
-                                ? "bg-[#D3AB80] border-[#D3AB80]"
-                                : "bg-white border-gray-300 group-hover:border-[#D3AB80]"
-                            }`}
+                    <div className="flex flex-col gap-4">
+                      {[
+                        "Activo",
+                        "Mi Cartera",
+                        "Mis Terceros",
+                        "Mis Pedidos",
+                        "Usa Documentos Específicos",
+                      ].map((label, index) => {
+                        const checked = formData.permisos[index];
+                        return (
+                          <label
+                            key={index}
+                            className="flex items-center justify-between cursor-pointer group w-64"
                           >
-                            {checked && (
-                              <Check size={12} className="text-white" />
-                            )}
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => handlePermisoChange(index)}
-                            className="hidden"
-                          />
-                        </label>
-                      ))}
+                            <span className="text-sm font-medium text-gray-700">
+                              {label}
+                            </span>
+                            <div
+                              className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                                checked
+                                  ? "bg-[#D3AB80] border-[#D3AB80]"
+                                  : "bg-white border-gray-300 group-hover:border-[#D3AB80]"
+                              }`}
+                            >
+                              {checked && (
+                                <Check size={12} className="text-white" />
+                              )}
+                            </div>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => handlePermisoChange(index)}
+                              className="hidden"
+                            />
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
                 </form>

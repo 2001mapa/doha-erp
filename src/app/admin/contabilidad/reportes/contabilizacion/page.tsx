@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, FileBarChart } from 'lucide-react';
+import { ArrowLeft, FileBarChart, Loader2, FileText, FileSpreadsheet } from 'lucide-react';
 
 export default function ContabilizacionPorTipoDocumento() {
   const [fechaInicial, setFechaInicial] = useState('');
@@ -10,6 +10,17 @@ export default function ContabilizacionPorTipoDocumento() {
   const [tipoDocumento, setTipoDocumento] = useState('Todos');
   const [tipoGrupo, setTipoGrupo] = useState('Agrupado en cuenta');
   const [tercero, setTercero] = useState('Todos');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+
+  const handleGenerar = () => {
+    setIsGenerating(true);
+    setShowResults(false);
+    setTimeout(() => {
+      setIsGenerating(false);
+      setShowResults(true);
+    }, 1500);
+  };
 
   return (
     <div className="min-h-screen bg-[#fdfbf9] text-[#472825] p-6">
@@ -112,23 +123,97 @@ export default function ContabilizacionPorTipoDocumento() {
           </div>
 
           {/* Action Button */}
-          <div className="mt-6 flex justify-end">
+          <div className="mt-6 flex justify-between items-center">
             <button
               type="button"
-              className="bg-[#D3AB80] hover:bg-[#b89570] text-white font-medium py-2 px-6 rounded-md flex items-center transition-colors"
+              onClick={handleGenerar}
+              disabled={isGenerating}
+              className="bg-[#D3AB80] hover:bg-[#b89570] text-white font-medium py-2 px-6 rounded-md flex items-center transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <FileBarChart className="w-5 h-5 mr-2" />
-              Generar
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Generando...
+                </>
+              ) : (
+                <>
+                  <FileBarChart className="w-5 h-5 mr-2" />
+                  Generar
+                </>
+              )}
             </button>
+
+            {showResults && (
+              <div className="flex items-center space-x-3">
+                <span className="text-sm font-semibold text-[#472825]">Exportar como:</span>
+                <button
+                  type="button"
+                  className="flex items-center space-x-1 px-3 py-1.5 border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 rounded-md transition-colors"
+                  title="Exportar a PDF"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span className="text-sm font-medium">PDF</span>
+                </button>
+                <button
+                  type="button"
+                  className="flex items-center space-x-1 px-3 py-1.5 border border-green-200 bg-green-50 hover:bg-green-100 text-green-600 rounded-md transition-colors"
+                  title="Exportar a Excel"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span className="text-sm font-medium">Excel</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Results Area */}
-        <div className="bg-white rounded-lg p-12 border-2 border-dashed border-gray-300 flex items-center justify-center min-h-[300px]">
-          <p className="text-gray-400 text-center max-w-md">
-            Seleccione los filtros y presione Generar para visualizar la contabilización de los documentos.
-          </p>
-        </div>
+        {showResults ? (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-[#fdfbf9] border-b border-gray-200">
+                  <tr>
+                    <th className="py-3 px-4 text-sm font-semibold text-[#472825]">Documento</th>
+                    <th className="py-3 px-4 text-sm font-semibold text-[#472825]">Fecha</th>
+                    <th className="py-3 px-4 text-sm font-semibold text-[#472825]">Cuenta</th>
+                    <th className="py-3 px-4 text-sm font-semibold text-[#472825] text-right">Débito</th>
+                    <th className="py-3 px-4 text-sm font-semibold text-[#472825] text-right">Crédito</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  <tr className="hover:bg-gray-50 transition-colors">
+                    <td className="py-3 px-4 text-sm text-gray-700">RC - 1024</td>
+                    <td className="py-3 px-4 text-sm text-gray-700">15/04/2026</td>
+                    <td className="py-3 px-4 text-sm text-gray-700">110505 - CAJA GENERAL</td>
+                    <td className="py-3 px-4 text-sm text-gray-700 text-right">$150.000</td>
+                    <td className="py-3 px-4 text-sm text-gray-700 text-right">$0</td>
+                  </tr>
+                  <tr className="hover:bg-gray-50 transition-colors">
+                    <td className="py-3 px-4 text-sm text-gray-700">RC - 1024</td>
+                    <td className="py-3 px-4 text-sm text-gray-700">15/04/2026</td>
+                    <td className="py-3 px-4 text-sm text-gray-700">130505 - CLIENTES NACIONALES</td>
+                    <td className="py-3 px-4 text-sm text-gray-700 text-right">$0</td>
+                    <td className="py-3 px-4 text-sm text-gray-700 text-right">$150.000</td>
+                  </tr>
+                </tbody>
+                <tfoot className="bg-gray-50 border-t-2 border-gray-200">
+                  <tr>
+                    <td colSpan={3} className="py-3 px-4 text-sm font-bold text-[#472825] text-right">Totales</td>
+                    <td className="py-3 px-4 text-sm font-bold text-[#472825] text-right">$150.000</td>
+                    <td className="py-3 px-4 text-sm font-bold text-[#472825] text-right">$150.000</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg p-12 border-2 border-dashed border-gray-300 flex items-center justify-center min-h-[300px]">
+            <p className="text-gray-400 text-center max-w-md">
+              Seleccione los filtros y presione Generar para visualizar la contabilización de los documentos.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

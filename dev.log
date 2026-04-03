@@ -1,0 +1,13 @@
+
+> doha-erp@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 531ms
+
+○ Compiling /admin/login ...
+ GET /admin/login 200 in 4.9s (next.js: 4.4s, application-code: 506ms)
+ GET /admin 200 in 695ms (next.js: 640ms, application-code: 55ms)
+ GET /admin/cartera/edades 200 in 2.9s (next.js: 2.9s, application-code: 65ms)

@@ -5,29 +5,10 @@
 ▲ Next.js 16.2.1 (Turbopack)
 - Local:         http://localhost:3000
 - Network:       http://192.168.0.2:3000
-✓ Ready in 724ms
+✓ Ready in 840ms
 
 ○ Compiling /admin/login ...
- GET /admin/login 200 in 5.7s (next.js: 5.1s, application-code: 577ms)
- GET /admin 200 in 765ms (next.js: 710ms, application-code: 55ms)
- GET /admin/contabilidad/notas 200 in 2.7s (next.js: 2.4s, application-code: 300ms)
- GET /admin/login 200 in 76ms (next.js: 5ms, application-code: 71ms)
- GET /admin/login 200 in 86ms (next.js: 6ms, application-code: 80ms)
- GET /admin 200 in 63ms (next.js: 8ms, application-code: 55ms)
- GET /admin/contabilidad/notas 200 in 91ms (next.js: 6ms, application-code: 85ms)
- GET /admin/login 200 in 58ms (next.js: 7ms, application-code: 50ms)
- GET /admin/login 200 in 95ms (next.js: 6ms, application-code: 89ms)
- GET /admin 200 in 34ms (next.js: 5ms, application-code: 29ms)
- GET /admin/contabilidad/notas 200 in 59ms (next.js: 4ms, application-code: 55ms)
- GET /admin/login 200 in 33ms (next.js: 3ms, application-code: 29ms)
- GET /admin/login 200 in 70ms (next.js: 3ms, application-code: 67ms)
- GET /admin 200 in 35ms (next.js: 3ms, application-code: 32ms)
- GET /admin/login 200 in 76ms (next.js: 3ms, application-code: 72ms)
- GET /admin 200 in 36ms (next.js: 4ms, application-code: 33ms)
- GET /admin/contabilidad/notas 200 in 63ms (next.js: 3ms, application-code: 60ms)
- GET /admin/login 200 in 31ms (next.js: 3ms, application-code: 28ms)
- GET /admin/login 200 in 110ms (next.js: 3ms, application-code: 107ms)
- GET /admin 200 in 40ms (next.js: 4ms, application-code: 36ms)
- GET /admin/login 200 in 72ms (next.js: 4ms, application-code: 68ms)
- GET /admin 200 in 36ms (next.js: 4ms, application-code: 32ms)
- GET /admin/contabilidad/notas 200 in 40ms (next.js: 4ms, application-code: 37ms)
+ GET /admin/login 200 in 5.1s (next.js: 4.5s, application-code: 631ms)
+ GET /admin 200 in 751ms (next.js: 697ms, application-code: 54ms)
+ GET /admin/contabilidad/reportes 200 in 748ms (next.js: 695ms, application-code: 53ms)
+ GET /admin/contabilidad/reportes/auxiliar 200 in 680ms (next.js: 595ms, application-code: 85ms)

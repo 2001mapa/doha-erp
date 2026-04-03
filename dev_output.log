@@ -5,15 +5,18 @@
 ▲ Next.js 16.2.1 (Turbopack)
 - Local:         http://localhost:3000
 - Network:       http://192.168.0.2:3000
-✓ Ready in 600ms
+✓ Ready in 535ms
 
 ○ Compiling /admin/login ...
- GET /admin/login 200 in 5.1s (next.js: 4.6s, application-code: 527ms)
- GET /admin/login 200 in 95ms (next.js: 6ms, application-code: 90ms)
- GET /admin 200 in 586ms (next.js: 542ms, application-code: 43ms)
- GET /admin/login 200 in 134ms (next.js: 4ms, application-code: 131ms)
+ GET /admin/login 200 in 5.0s (next.js: 4.4s, application-code: 531ms)
+ GET /admin 200 in 803ms (next.js: 752ms, application-code: 51ms)
+ GET /admin/login 200 in 84ms (next.js: 6ms, application-code: 78ms)
+ GET /admin 200 in 31ms (next.js: 5ms, application-code: 26ms)
+ GET /admin/login 200 in 72ms (next.js: 4ms, application-code: 68ms)
+ GET /admin 200 in 33ms (next.js: 3ms, application-code: 29ms)
+ GET /admin/login 200 in 64ms (next.js: 4ms, application-code: 60ms)
+ GET /admin 200 in 32ms (next.js: 3ms, application-code: 28ms)
+ GET /admin/login 200 in 82ms (next.js: 5ms, application-code: 77ms)
  GET /admin 200 in 34ms (next.js: 4ms, application-code: 30ms)
- GET /admin/login 200 in 182ms (next.js: 8ms, application-code: 174ms)
- GET /admin 200 in 92ms (next.js: 7ms, application-code: 86ms)
-○ Compiling /admin/terceros/vendedores ...
- GET /admin/terceros/vendedores 200 in 6.9s (next.js: 6.7s, application-code: 200ms)
+ GET /admin/contabilidad/reportes 200 in 732ms (next.js: 689ms, application-code: 43ms)
+ GET /admin/contabilidad/reportes/balance 200 in 643ms (next.js: 593ms, application-code: 50ms)

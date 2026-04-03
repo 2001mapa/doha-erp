@@ -15,6 +15,12 @@ export default function EdadesCarteraPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [showHistoricosData, setShowHistoricosData] = useState(false);
 
+  const [isGeneratingEstadoCuenta, setIsGeneratingEstadoCuenta] = useState(false);
+  const [showEstadoCuentaData, setShowEstadoCuentaData] = useState(false);
+
+  const [isGeneratingReporte, setIsGeneratingReporte] = useState(false);
+  const [showReporteData, setShowReporteData] = useState(false);
+
   const tabs: TabType[] = ["Históricos", "Estado de Cuenta", "Cartera Reporte", "Panel de Edades"];
 
   const handleGenerateEdades = () => {
@@ -32,6 +38,24 @@ export default function EdadesCarteraPage() {
     setTimeout(() => {
       setIsSearching(false);
       setShowHistoricosData(true);
+    }, 1000);
+  };
+
+  const handleGenerateEstadoCuenta = () => {
+    setIsGeneratingEstadoCuenta(true);
+    setShowEstadoCuentaData(false);
+    setTimeout(() => {
+      setIsGeneratingEstadoCuenta(false);
+      setShowEstadoCuentaData(true);
+    }, 1000);
+  };
+
+  const handleGenerateReporte = () => {
+    setIsGeneratingReporte(true);
+    setShowReporteData(false);
+    setTimeout(() => {
+      setIsGeneratingReporte(false);
+      setShowReporteData(true);
     }, 1000);
   };
 
@@ -428,12 +452,284 @@ export default function EdadesCarteraPage() {
             </div>
           )}
 
-          {(activeTab === "Estado de Cuenta" || activeTab === "Cartera Reporte") && (
-            <div className="bg-white p-12 rounded-xl shadow-sm border border-zinc-200 text-center">
-              <h2 className="text-2xl font-bold text-zinc-400 mb-2">Módulo en construcción</h2>
-              <p className="text-zinc-500">
-                Los filtros específicos se agregarán en la siguiente fase.
-              </p>
+          {activeTab === "Estado de Cuenta" && (
+            <div className="space-y-6">
+              {/* Panel de Filtros Estado de Cuenta */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-zinc-200">
+                <h2 className="text-xl font-bold text-[#472825] mb-4">Estado de Cuenta</h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Concepto</label>
+                    <select className="w-full border rounded p-2 text-sm bg-white mb-2">
+                      <option>CUENTAS X COBRAR</option>
+                      <option>CUENTAS X PAGAR</option>
+                      <option>TODOS</option>
+                    </select>
+                    <label className="flex items-center gap-2 text-sm text-[#472825]">
+                      <input type="checkbox" className="rounded text-[#D3AB80] focus:ring-[#D3AB80]" />
+                      Cruces pendientes
+                    </label>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Tercero</label>
+                    <div className="relative">
+                      <input type="text" placeholder="Buscar tercero..." className="w-full border rounded p-2 text-sm bg-white pr-8" />
+                      <Search className="absolute right-2 top-2 text-zinc-400" size={16} />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center h-full pt-4">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-[#472825]">
+                      <input type="checkbox" className="rounded text-[#D3AB80] focus:ring-[#D3AB80]" />
+                      Abrir Sucursales
+                    </label>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Fecha de Corte</label>
+                    <input type="date" className="w-full border rounded p-2 text-sm bg-white" />
+                  </div>
+                </div>
+
+                <div className="mt-6 flex">
+                  <button
+                    onClick={handleGenerateEstadoCuenta}
+                    disabled={isGeneratingEstadoCuenta}
+                    className="bg-[#D3AB80] hover:bg-[#c29b70] text-white font-bold py-2 px-6 rounded shadow flex items-center justify-center gap-2 transition-colors disabled:opacity-70"
+                  >
+                    {isGeneratingEstadoCuenta ? (
+                      <>
+                        <RefreshCw className="animate-spin" size={18} />
+                        Generando...
+                      </>
+                    ) : (
+                      "Generar"
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Resultados Estado de Cuenta */}
+              {showEstadoCuentaData && (
+                <div className="bg-white rounded-xl shadow-sm border border-zinc-200 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-zinc-50 border-b border-zinc-200">
+                        <tr>
+                          <th className="px-4 py-3 font-semibold">Documento</th>
+                          <th className="px-4 py-3 font-semibold">Fecha</th>
+                          <th className="px-4 py-3 font-semibold">Vencimiento</th>
+                          <th className="px-4 py-3 font-semibold text-right">Valor Original</th>
+                          <th className="px-4 py-3 font-semibold text-right">Saldo Pendiente</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100">
+                        <tr className="hover:bg-zinc-50">
+                          <td className="px-4 py-3 text-blue-600 cursor-pointer">FC-1050</td>
+                          <td className="px-4 py-3">01/05/2024</td>
+                          <td className="px-4 py-3 text-red-600">31/05/2024</td>
+                          <td className="px-4 py-3 text-right">$1,500,000</td>
+                          <td className="px-4 py-3 text-right font-semibold">$500,000</td>
+                        </tr>
+                        <tr className="hover:bg-zinc-50">
+                          <td className="px-4 py-3 text-blue-600 cursor-pointer">FC-1055</td>
+                          <td className="px-4 py-3">15/05/2024</td>
+                          <td className="px-4 py-3">14/06/2024</td>
+                          <td className="px-4 py-3 text-right">$3,200,000</td>
+                          <td className="px-4 py-3 text-right font-semibold">$3,200,000</td>
+                        </tr>
+                        <tr className="hover:bg-zinc-50">
+                          <td className="px-4 py-3 text-blue-600 cursor-pointer">FC-1062</td>
+                          <td className="px-4 py-3">20/05/2024</td>
+                          <td className="px-4 py-3">19/06/2024</td>
+                          <td className="px-4 py-3 text-right">$850,000</td>
+                          <td className="px-4 py-3 text-right font-semibold">$850,000</td>
+                        </tr>
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-zinc-100 border-t-2 border-zinc-300 font-bold">
+                          <td colSpan={3} className="px-4 py-3 text-right">TOTALES</td>
+                          <td className="px-4 py-3 text-right">$5,550,000</td>
+                          <td className="px-4 py-3 text-right text-red-700">$4,550,000</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "Cartera Reporte" && (
+            <div className="space-y-6">
+              {/* Panel de Filtros Cartera Reporte */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-zinc-200">
+                <div className="flex justify-between items-start mb-6">
+                  <h2 className="text-xl font-bold text-[#472825]">Cartera Reporte</h2>
+                  <button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded shadow-sm flex items-center gap-2 transition-colors">
+                    <FileSpreadsheet size={18} />
+                    Descargar a Excel
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-start mb-6">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Concepto</label>
+                    <select className="w-full border rounded p-2 text-sm bg-white">
+                      <option>CUENTAS X COBRAR</option>
+                      <option>CUENTAS X PAGAR</option>
+                      <option>TODOS</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Tercero</label>
+                    <select className="w-full border rounded p-2 text-sm bg-white">
+                      <option>TODOS</option>
+                      <option>Joyería El Diamante</option>
+                      <option>Distribuidora Oro Fino</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Ciudades</label>
+                    <select className="w-full border rounded p-2 text-sm bg-white">
+                      <option>TODAS</option>
+                      <option>Bogotá</option>
+                      <option>Medellín</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Vendedor</label>
+                    <select className="w-full border rounded p-2 text-sm bg-white">
+                      <option>TODOS</option>
+                      <option>Juan Perez</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Sucursal</label>
+                    <select className="w-full border rounded p-2 text-sm bg-white">
+                      <option>PRINCIPAL</option>
+                      <option>NORTE</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Fecha corte</label>
+                    <input type="date" className="w-full border rounded p-2 text-sm bg-white mb-2" />
+                    <label className="flex items-center gap-2 text-xs font-semibold text-[#472825]">
+                      <input type="checkbox" className="rounded text-[#D3AB80] focus:ring-[#D3AB80]" />
+                      Expandir
+                    </label>
+                  </div>
+                </div>
+
+                {/* Opciones de Visualización */}
+                <div className="mb-6 p-4 border border-zinc-100 bg-zinc-50 rounded-lg">
+                  <h3 className="text-sm font-semibold mb-3 text-[#472825]">Opciones de Visualización</h3>
+                  <div className="flex flex-wrap gap-4">
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" className="rounded text-[#D3AB80] focus:ring-[#D3AB80]" />
+                      Muestra Sucursal
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" className="rounded text-[#D3AB80] focus:ring-[#D3AB80]" />
+                      Muestra Ciudad
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" className="rounded text-[#D3AB80] focus:ring-[#D3AB80]" />
+                      Muestra Direccion
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" className="rounded text-[#D3AB80] focus:ring-[#D3AB80]" />
+                      Muestra Telefono
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" className="rounded text-[#D3AB80] focus:ring-[#D3AB80]" />
+                      Muestra Vendedor
+                    </label>
+                  </div>
+                </div>
+
+                {/* Agrupación y Generar */}
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-semibold mb-3 text-[#472825]">Agrupación</h3>
+                    <div className="flex flex-wrap gap-4">
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="radio" name="agrupacion" defaultChecked className="text-[#D3AB80] focus:ring-[#D3AB80]" />
+                        Vencida
+                      </label>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="radio" name="agrupacion" className="text-[#D3AB80] focus:ring-[#D3AB80]" />
+                        Por Vencer
+                      </label>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="radio" name="agrupacion" className="text-[#D3AB80] focus:ring-[#D3AB80]" />
+                        Sin Agrupar
+                      </label>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="radio" name="agrupacion" className="text-[#D3AB80] focus:ring-[#D3AB80]" />
+                        Vendedor
+                      </label>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleGenerateReporte}
+                    disabled={isGeneratingReporte}
+                    className="bg-[#D3AB80] hover:bg-[#c29b70] text-white font-bold py-2 px-6 rounded shadow flex items-center justify-center gap-2 transition-colors disabled:opacity-70 whitespace-nowrap"
+                  >
+                    {isGeneratingReporte ? (
+                      <>
+                        <RefreshCw className="animate-spin" size={18} />
+                        Generando...
+                      </>
+                    ) : (
+                      "Generar Reporte"
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Resultados Cartera Reporte */}
+              {showReporteData && (
+                <div className="bg-white rounded-xl shadow-sm border border-zinc-200 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-zinc-50 border-b border-zinc-200">
+                        <tr>
+                          <th className="px-4 py-3 font-semibold">Cliente</th>
+                          <th className="px-4 py-3 font-semibold">Teléfono</th>
+                          <th className="px-4 py-3 font-semibold">Ciudad</th>
+                          <th className="px-4 py-3 font-semibold">Factura</th>
+                          <th className="px-4 py-3 font-semibold text-center">Días Mora</th>
+                          <th className="px-4 py-3 font-semibold text-right">Saldo</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100">
+                        <tr className="hover:bg-zinc-50">
+                          <td className="px-4 py-3">Joyería El Diamante</td>
+                          <td className="px-4 py-3">300 123 4567</td>
+                          <td className="px-4 py-3">Bogotá</td>
+                          <td className="px-4 py-3 text-blue-600">FC-1050</td>
+                          <td className="px-4 py-3 text-center text-red-600 font-bold">45</td>
+                          <td className="px-4 py-3 text-right font-semibold">$500,000</td>
+                        </tr>
+                        <tr className="hover:bg-zinc-50">
+                          <td className="px-4 py-3">Distribuidora Oro Fino</td>
+                          <td className="px-4 py-3">310 987 6543</td>
+                          <td className="px-4 py-3">Medellín</td>
+                          <td className="px-4 py-3 text-blue-600">FC-1055</td>
+                          <td className="px-4 py-3 text-center text-red-600 font-bold">12</td>
+                          <td className="px-4 py-3 text-right font-semibold">$3,200,000</td>
+                        </tr>
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-zinc-100 border-t-2 border-zinc-300 font-bold">
+                          <td colSpan={5} className="px-4 py-3 text-right">TOTAL CARTERA VENCIDA</td>
+                          <td className="px-4 py-3 text-right text-red-700">$3,700,000</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </motion.div>

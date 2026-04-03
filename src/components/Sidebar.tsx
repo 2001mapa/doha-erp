@@ -8,7 +8,6 @@ import {
   Package,
   Users,
   UserCheck,
-  FileText,
   Wallet,
   Wallet2,
   Tag,
@@ -28,7 +27,6 @@ import {
   ClipboardCheck,
   Search,
   FileSpreadsheet,
-  Boxes,
   ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
@@ -164,7 +162,7 @@ const menuItems = [
       {
         name: "Consulta Unidades",
         icon: <Search size={16} />,
-        href: "/admin/inventario/consulta",
+        href: "/admin/inventario/unidades",
       },
       {
         name: "Kardex",

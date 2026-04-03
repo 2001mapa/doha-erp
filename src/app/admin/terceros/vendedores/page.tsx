@@ -1,35 +1,51 @@
 "use client";
 import { useState } from "react";
-import { Plus, Search, Edit, Trash2, X, Phone, IdCard, Hash, UserCircle, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, Search, Edit, Trash2, X, Percent, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Vendedor = {
   id: string;
-  nombre: string;
-  tipoIdentificacion: "Cédula de Ciudadanía" | "Cédula de Extranjería" | "Pasaporte" | "NIT";
-  numeroIdentificacion: string;
-  telefono: string;
-  estado: "Activo" | "Inactivo";
+  codigo: string;
+  descripcion: string;
+  tercero: string;
+  cVenta: number;
+  cRecaudo: number;
+  recaudador: boolean;
+  atiende: boolean;
+  permisos: boolean[];
 };
 
 // Mock inicial
 const initialVendedores: Vendedor[] = [
   {
     id: "1",
-    nombre: "Andrea Martínez",
-    tipoIdentificacion: "Cédula de Ciudadanía",
-    numeroIdentificacion: "1023456789",
-    telefono: "3009876543",
-    estado: "Activo",
+    codigo: "101",
+    descripcion: "VENDEDOR PUNTO DE VENTA",
+    tercero: "98667545 - MIGUEL RESTREPO",
+    cVenta: 0.0,
+    cRecaudo: 0.0,
+    recaudador: false,
+    atiende: false,
+    permisos: [false, false, false, false, false],
   },
   {
     id: "2",
-    nombre: "Roberto Gómez",
-    tipoIdentificacion: "Cédula de Extranjería",
-    numeroIdentificacion: "CE987654",
-    telefono: "3112345678",
-    estado: "Inactivo",
+    codigo: "106",
+    descripcion: "FABER ARISTIZABAL",
+    tercero: "79887455 - FABER ARISTIZABAL",
+    cVenta: 5.0,
+    cRecaudo: 0.0,
+    recaudador: false,
+    atiende: false,
+    permisos: [false, false, false, false, false],
   },
+];
+
+const TERCEROS_MOCK = [
+  "98667545 - MIGUEL RESTREPO",
+  "79887455 - FABER ARISTIZABAL",
+  "12345678 - JUAN PEREZ",
+  "87654321 - MARIA GOMEZ",
 ];
 
 export default function VendedoresPage() {
@@ -40,29 +56,38 @@ export default function VendedoresPage() {
 
   const [formData, setFormData] = useState<Vendedor>({
     id: "",
-    nombre: "",
-    tipoIdentificacion: "Cédula de Ciudadanía",
-    numeroIdentificacion: "",
-    telefono: "",
-    estado: "Activo",
+    codigo: "",
+    descripcion: "",
+    tercero: TERCEROS_MOCK[0],
+    cVenta: 0,
+    cRecaudo: 0,
+    recaudador: false,
+    atiende: false,
+    permisos: [false, false, false, false, false],
   });
 
   const handleOpenNew = () => {
     setIsEditing(false);
     setFormData({
       id: "",
-      nombre: "",
-      tipoIdentificacion: "Cédula de Ciudadanía",
-      numeroIdentificacion: "",
-      telefono: "",
-      estado: "Activo",
+      codigo: "",
+      descripcion: "",
+      tercero: TERCEROS_MOCK[0],
+      cVenta: 0,
+      cRecaudo: 0,
+      recaudador: false,
+      atiende: false,
+      permisos: [false, false, false, false, false],
     });
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (vendedor: Vendedor) => {
     setIsEditing(true);
-    setFormData(vendedor);
+    setFormData({
+      ...vendedor,
+      permisos: vendedor.permisos || [false, false, false, false, false],
+    });
     setIsModalOpen(true);
   };
 
@@ -75,7 +100,24 @@ export default function VendedoresPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const target = e.target as HTMLInputElement;
+    const { name, value, type, checked } = target;
+
+    setFormData({
+      ...formData,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : type === "number"
+          ? parseFloat(value) || 0
+          : value,
+    });
+  };
+
+  const handlePermisoChange = (index: number) => {
+    const newPermisos = [...formData.permisos];
+    newPermisos[index] = !newPermisos[index];
+    setFormData({ ...formData, permisos: newPermisos });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -87,14 +129,20 @@ export default function VendedoresPage() {
     } else {
       setVendedores([
         ...vendedores,
-        { ...formData, id: Date.now().toString() },
+        {
+          ...formData,
+          id: Date.now().toString(),
+          codigo: Math.floor(Math.random() * 1000).toString(),
+        },
       ]);
     }
     setIsModalOpen(false);
   };
 
-  const filteredVendedores = vendedores.filter((v) =>
-    v.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredVendedores = vendedores.filter(
+    (v) =>
+      v.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      v.tercero.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -106,7 +154,7 @@ export default function VendedoresPage() {
             Gestión de Vendedores
           </h1>
           <p className="text-sm font-medium text-gray-500 mt-1">
-            Administra el equipo de ventas del sistema.
+            Administra el equipo de ventas y sus comisiones.
           </p>
         </div>
         <button
@@ -127,10 +175,10 @@ export default function VendedoresPage() {
           />
           <input
             type="text"
-            placeholder="Buscar por nombre..."
+            placeholder="Buscar por descripción o tercero..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-gray-50 border-none rounded-xl py-3 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-[#D3AB80]/50 transition-all"
+            className="w-full bg-gray-50 border-none rounded-xl py-3 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-[#D3AB80]/50 transition-all text-[#472825]"
           />
         </div>
       </div>
@@ -142,19 +190,19 @@ export default function VendedoresPage() {
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
                 <th className="p-5 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Nombre Completo
+                  Código
                 </th>
                 <th className="p-5 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Tipo de ID
+                  Descripción
                 </th>
                 <th className="p-5 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Número de ID
+                  Tercero
                 </th>
                 <th className="p-5 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Teléfono
+                  C. Venta (%)
                 </th>
                 <th className="p-5 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Estado
+                  C. Recaudo (%)
                 </th>
                 <th className="p-5 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">
                   Acciones
@@ -168,40 +216,20 @@ export default function VendedoresPage() {
                     key={vendedor.id}
                     className="hover:bg-gray-50/50 transition-colors group"
                   >
-                    <td className="p-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-[#D3AB80]/10 group-hover:text-[#D3AB80] transition-colors">
-                          <UserCircle size={20} />
-                        </div>
-                        <span className="text-sm font-bold text-[#472825]">
-                          {vendedor.nombre}
-                        </span>
-                      </div>
+                    <td className="p-5 text-sm font-bold text-[#472825]">
+                      {vendedor.codigo}
                     </td>
                     <td className="p-5 text-sm font-medium text-gray-600">
-                      {vendedor.tipoIdentificacion}
+                      {vendedor.descripcion}
                     </td>
                     <td className="p-5 text-sm font-medium text-gray-600">
-                      {vendedor.numeroIdentificacion}
+                      {vendedor.tercero}
                     </td>
                     <td className="p-5 text-sm font-medium text-gray-600">
-                      {vendedor.telefono}
+                      {vendedor.cVenta.toFixed(1)}%
                     </td>
-                    <td className="p-5">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                          vendedor.estado === "Activo"
-                            ? "bg-green-50 text-green-700 border border-green-200"
-                            : "bg-red-50 text-red-700 border border-red-200"
-                        }`}
-                      >
-                        {vendedor.estado === "Activo" ? (
-                          <CheckCircle2 size={14} />
-                        ) : (
-                          <XCircle size={14} />
-                        )}
-                        {vendedor.estado}
-                      </span>
+                    <td className="p-5 text-sm font-medium text-gray-600">
+                      {vendedor.cRecaudo.toFixed(1)}%
                     </td>
                     <td className="p-5">
                       <div className="flex justify-center gap-3">
@@ -255,7 +283,7 @@ export default function VendedoresPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-full max-w-2xl bg-white rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden border border-gray-100"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-full max-w-4xl bg-white rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]"
             >
               <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                 <div>
@@ -264,8 +292,8 @@ export default function VendedoresPage() {
                   </h2>
                   <p className="text-xs font-medium text-gray-500 mt-1">
                     {isEditing
-                      ? "Modifica los datos del vendedor."
-                      : "Completa los datos para el nuevo vendedor."}
+                      ? "Modifica los parámetros comerciales del vendedor."
+                      : "Configura los parámetros comerciales para el nuevo vendedor."}
                   </p>
                 </div>
                 <button
@@ -276,144 +304,205 @@ export default function VendedoresPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="p-8 space-y-5">
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Nombre - Ocupa 2 columnas */}
-                  <div className="col-span-2 space-y-1.5">
-                    <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                      Nombre Completo
-                    </label>
-                    <div className="relative">
-                      <UserCircle
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
+              <div className="overflow-y-auto p-8 flex-1">
+                <form
+                  id="vendedor-form"
+                  onSubmit={handleSubmit}
+                  className="space-y-8"
+                >
+                  {/* Fila 1 (Identificación) */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="col-span-1 space-y-1.5">
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                        Descripción
+                      </label>
                       <input
                         type="text"
-                        name="nombre"
-                        value={formData.nombre}
+                        name="descripcion"
+                        value={formData.descripcion}
                         onChange={handleChange}
                         required
-                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                        placeholder="Ej. Andrea Martínez"
+                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                        placeholder="Ej. Vendedor Zona Sur"
                       />
                     </div>
-                  </div>
 
-                  {/* Tipo de ID */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                      Tipo de Identificación
-                    </label>
-                    <div className="relative">
-                      <IdCard
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
+                    <div className="col-span-1 md:col-span-2 space-y-1.5">
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                        Tercero
+                      </label>
                       <select
-                        name="tipoIdentificacion"
-                        value={formData.tipoIdentificacion}
+                        name="tercero"
+                        value={formData.tercero}
                         onChange={handleChange}
-                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825] appearance-none"
+                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825] appearance-none"
                       >
-                        <option value="Cédula de Ciudadanía">Cédula de Ciudadanía</option>
-                        <option value="Cédula de Extranjería">Cédula de Extranjería</option>
-                        <option value="Pasaporte">Pasaporte</option>
-                        <option value="NIT">NIT</option>
+                        {TERCEROS_MOCK.map((t, idx) => (
+                          <option key={idx} value={t}>
+                            {t}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
 
-                  {/* Número de ID */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                      Número de Identificación
-                    </label>
-                    <div className="relative">
-                      <Hash
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
-                      <input
-                        type="text"
-                        name="numeroIdentificacion"
-                        value={formData.numeroIdentificacion}
-                        onChange={handleChange}
-                        required
-                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                        placeholder="Ej. 1023456789"
-                      />
+                  {/* Fila 2 (Comisiones y Roles) */}
+                  <div className="border border-gray-200 rounded-2xl p-6 bg-gray-50/30">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                          Comisión en Venta
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            name="cVenta"
+                            value={formData.cVenta}
+                            onChange={handleChange}
+                            required
+                            className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-4 pr-10 text-sm font-medium outline-none transition-all text-[#472825]"
+                            placeholder="0.0"
+                          />
+                          <Percent
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                            size={16}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-center justify-end pb-3">
+                        <label className="flex flex-col items-center gap-2 cursor-pointer group">
+                          <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
+                            Recaudador
+                          </span>
+                          <div
+                            className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${
+                              formData.recaudador
+                                ? "bg-[#D3AB80] border-[#D3AB80]"
+                                : "bg-white border-gray-300 group-hover:border-[#D3AB80]"
+                            }`}
+                          >
+                            {formData.recaudador && (
+                              <Check size={14} className="text-white" />
+                            )}
+                          </div>
+                          <input
+                            type="checkbox"
+                            name="recaudador"
+                            checked={formData.recaudador}
+                            onChange={handleChange}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                          Comisión en Recaudo
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            name="cRecaudo"
+                            value={formData.cRecaudo}
+                            onChange={handleChange}
+                            required
+                            className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-4 pr-10 text-sm font-medium outline-none transition-all text-[#472825]"
+                            placeholder="0.0"
+                          />
+                          <Percent
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                            size={16}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-center justify-end pb-3">
+                        <label className="flex flex-col items-center gap-2 cursor-pointer group">
+                          <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
+                            Atiende
+                          </span>
+                          <div
+                            className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${
+                              formData.atiende
+                                ? "bg-[#D3AB80] border-[#D3AB80]"
+                                : "bg-white border-gray-300 group-hover:border-[#D3AB80]"
+                            }`}
+                          >
+                            {formData.atiende && (
+                              <Check size={14} className="text-white" />
+                            )}
+                          </div>
+                          <input
+                            type="checkbox"
+                            name="atiende"
+                            checked={formData.atiende}
+                            onChange={handleChange}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Teléfono */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                      Teléfono
-                    </label>
-                    <div className="relative">
-                      <Phone
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
-                      <input
-                        type="text"
-                        name="telefono"
-                        value={formData.telefono}
-                        onChange={handleChange}
-                        required
-                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                        placeholder="Ej. 3009876543"
-                      />
+                  {/* Fila 3 (Permisos / Ajustes Específicos) */}
+                  <div className="flex items-start gap-8 mt-6">
+                    <div className="w-1/3">
+                      <h3 className="text-sm font-bold text-[#472825]">
+                        Puntos Específicos
+                      </h3>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      {formData.permisos.map((checked, index) => (
+                        <label
+                          key={index}
+                          className="flex items-center cursor-pointer group"
+                        >
+                          <div
+                            className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                              checked
+                                ? "bg-[#D3AB80] border-[#D3AB80]"
+                                : "bg-white border-gray-300 group-hover:border-[#D3AB80]"
+                            }`}
+                          >
+                            {checked && (
+                              <Check size={12} className="text-white" />
+                            )}
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => handlePermisoChange(index)}
+                            className="hidden"
+                          />
+                        </label>
+                      ))}
                     </div>
                   </div>
+                </form>
+              </div>
 
-                  {/* Estado */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                      Estado
-                    </label>
-                    <div className="relative">
-                      {formData.estado === "Activo" ? (
-                        <CheckCircle2
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-green-500"
-                          size={18}
-                        />
-                      ) : (
-                        <XCircle
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500"
-                          size={18}
-                        />
-                      )}
-                      <select
-                        name="estado"
-                        value={formData.estado}
-                        onChange={handleChange}
-                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825] appearance-none"
-                      >
-                        <option value="Activo">Activo</option>
-                        <option value="Inactivo">Inactivo</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-6 mt-2 border-t border-gray-100 flex items-center justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-5 py-2.5 text-sm font-bold text-gray-500 hover:text-[#472825] transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="bg-[#D3AB80] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#b8946d] transition-all shadow-md"
-                  >
-                    {isEditing ? "Guardar Cambios" : "Crear Vendedor"}
-                  </button>
-                </div>
-              </form>
+              {/* Botones del Modal */}
+              <div className="px-8 py-5 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-5 py-2.5 text-sm font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  form="vendedor-form"
+                  className="bg-[#D3AB80] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#b8946d] transition-all shadow-md"
+                >
+                  Guardar
+                </button>
+              </div>
             </motion.div>
           </>
         )}

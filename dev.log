@@ -5,12 +5,15 @@
 ▲ Next.js 16.2.1 (Turbopack)
 - Local:         http://localhost:3000
 - Network:       http://192.168.0.2:3000
-✓ Ready in 509ms
+✓ Ready in 552ms
 
-○ Compiling /admin/login ...
- GET /admin/login 200 in 5.2s (next.js: 4.6s, application-code: 565ms)
- GET /admin 200 in 698ms (next.js: 651ms, application-code: 47ms)
- GET /admin/inventario/fisico 200 in 2.2s (next.js: 2.1s, application-code: 68ms)
- GET /admin/login 200 in 94ms (next.js: 8ms, application-code: 86ms)
- GET /admin 200 in 32ms (next.js: 4ms, application-code: 28ms)
- GET /admin/inventario/fisico 200 in 40ms (next.js: 4ms, application-code: 37ms)
+○ Compiling /admin/facturacion/buscador ...
+ GET /admin/facturacion/buscador 200 in 5.2s (next.js: 4.7s, application-code: 491ms)
+ GET /admin/login 200 in 934ms (next.js: 877ms, application-code: 57ms)
+ GET /admin/login 200 in 106ms (next.js: 6ms, application-code: 99ms)
+ GET /admin 200 in 635ms (next.js: 596ms, application-code: 38ms)
+ GET /admin/facturacion/buscador 200 in 182ms (next.js: 9ms, application-code: 174ms)
+ GET /admin/login 200 in 40ms (next.js: 4ms, application-code: 35ms)
+ GET /admin/login 200 in 97ms (next.js: 4ms, application-code: 93ms)
+ GET /admin 200 in 32ms (next.js: 3ms, application-code: 28ms)
+ GET /admin/facturacion/buscador 200 in 69ms (next.js: 5ms, application-code: 64ms)

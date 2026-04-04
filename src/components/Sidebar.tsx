@@ -28,6 +28,8 @@ import {
   Search,
   FileSpreadsheet,
   ShoppingCart,
+  FileText,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import { useAdminAuth } from "../context/AdminAuthContext";
@@ -176,14 +178,38 @@ const menuItems = [
     icon: <Receipt size={20} />,
     subItems: [
       {
-        name: "Punto de Venta",
-        icon: <ShoppingBag size={16} />,
-        href: "/admin/pos",
+        name: "Facturas",
+        icon: <FileText size={16} />,
+        href: "/admin/facturacion/facturas",
       },
       {
-        name: "Remisiones",
-        icon: <Receipt size={16} />,
-        href: "/admin/pos/remisiones",
+        name: "Buscador",
+        icon: <Search size={16} />,
+        href: "/admin/facturacion/buscador",
+      },
+      {
+        name: "Devoluciones",
+        icon: <RotateCcw size={16} />,
+        href: "/admin/facturacion/devoluciones",
+      },
+      {
+        name: "Notas Débito",
+        icon: <ClipboardList size={16} />,
+        href: "/admin/facturacion/notas-debito",
+      },
+      {
+        name: "Reportes",
+        icon: <BarChart3 size={16} />,
+        subItems: [
+          {
+            name: "Cuadre Diario",
+            href: "/admin/facturacion/reportes/cuadre",
+          },
+          {
+            name: "Utilidad Bruta",
+            href: "/admin/facturacion/reportes/utilidad",
+          },
+        ],
       },
     ],
   },
@@ -191,11 +217,16 @@ const menuItems = [
 
 export const DohaSidebar = () => {
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const [openNestedSubmenu, setOpenNestedSubmenu] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout } = useAdminAuth();
 
   const toggleSubmenu = (name: string) => {
     setOpenSubmenu(openSubmenu === name ? null : name);
+  };
+
+  const toggleNestedSubmenu = (name: string) => {
+    setOpenNestedSubmenu(openNestedSubmenu === name ? null : name);
   };
 
   // Definimos las transiciones comunes para sincronizar perfectamente botón y panel
@@ -291,18 +322,62 @@ export const DohaSidebar = () => {
                     className={`overflow-hidden transition-all duration-300 ${openSubmenu === item.name ? "max-h-60 mt-1" : "max-h-0"}`}
                   >
                     <div className="flex flex-col pl-9 pr-3 space-y-1 border-l-2 border-zinc-800 ml-3">
-                      {item.subItems.map((sub) => (
-                        <Link
-                          key={sub.name}
-                          href={sub.href}
-                          onClick={() => setIsSidebarOpen(false)}
-                        >
-                          <span className="flex items-center gap-2.5 py-2.5 text-xs font-semibold text-zinc-400 hover:text-amber-400 transition-colors">
-                            {"icon" in sub ? sub.icon : <CircleDot size={8} />}
-                            {sub.name}
-                          </span>
-                        </Link>
-                      ))}
+                      {item.subItems.map((sub) => {
+                        if ("subItems" in sub) {
+                          return (
+                            <div key={sub.name} className="flex flex-col">
+                              <button
+                                onClick={() => toggleNestedSubmenu(sub.name)}
+                                className="w-full flex items-center justify-between py-2.5 text-xs font-semibold text-zinc-400 hover:text-amber-400 transition-colors"
+                              >
+                                <span className="flex items-center gap-2.5">
+                                  {"icon" in sub ? sub.icon : <CircleDot size={8} />}
+                                  {sub.name}
+                                </span>
+                                <ChevronDown
+                                  size={12}
+                                  className={`transition-all duration-200 ${
+                                    openNestedSubmenu === sub.name
+                                      ? "opacity-100 rotate-180 text-amber-500"
+                                      : "opacity-100 group-hover:opacity-100 text-zinc-400"
+                                  }`}
+                                />
+                              </button>
+                              <div
+                                className={`overflow-hidden transition-all duration-300 ${openNestedSubmenu === sub.name ? "max-h-40" : "max-h-0"}`}
+                              >
+                                <div className="flex flex-col pl-6 pr-3 space-y-1 border-l border-zinc-800 ml-3 mb-2">
+                                  {sub.subItems?.map((nestedSub) => (
+                                    <Link
+                                      key={nestedSub.name}
+                                      href={nestedSub.href}
+                                      onClick={() => setIsSidebarOpen(false)}
+                                    >
+                                      <span className="flex items-center gap-2.5 py-2 text-xs font-medium text-zinc-500 hover:text-amber-400 transition-colors">
+                                        <CircleDot size={6} />
+                                        {nestedSub.name}
+                                      </span>
+                                    </Link>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <Link
+                            key={sub.name}
+                            href={("href" in sub ? sub.href : "#") as string}
+                            onClick={() => setIsSidebarOpen(false)}
+                          >
+                            <span className="flex items-center gap-2.5 py-2.5 text-xs font-semibold text-zinc-400 hover:text-amber-400 transition-colors">
+                              {"icon" in sub ? sub.icon : <CircleDot size={8} />}
+                              {sub.name}
+                            </span>
+                          </Link>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

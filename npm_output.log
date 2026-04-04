@@ -5,12 +5,12 @@
 ▲ Next.js 16.2.1 (Turbopack)
 - Local:         http://localhost:3000
 - Network:       http://192.168.0.2:3000
-✓ Ready in 517ms
+✓ Ready in 537ms
 
 ○ Compiling /admin/login ...
- GET /admin/login 200 in 5.3s (next.js: 4.8s, application-code: 510ms)
- GET /admin 200 in 764ms (next.js: 705ms, application-code: 59ms)
- GET /admin/inventario/kardex 200 in 667ms (next.js: 578ms, application-code: 89ms)
- GET /admin/login 200 in 76ms (next.js: 5ms, application-code: 71ms)
- GET /admin 200 in 35ms (next.js: 4ms, application-code: 31ms)
- GET /admin/inventario/kardex 200 in 30ms (next.js: 3ms, application-code: 26ms)
+ GET /admin/login 200 in 4.6s (next.js: 4.0s, application-code: 570ms)
+ GET /admin 200 in 733ms (next.js: 676ms, application-code: 58ms)
+ GET /admin/facturacion 200 in 2.2s (next.js: 2.1s, application-code: 42ms)
+ GET /admin/login 200 in 82ms (next.js: 5ms, application-code: 77ms)
+ GET /admin 200 in 34ms (next.js: 4ms, application-code: 30ms)
+ GET /admin/facturacion 200 in 30ms (next.js: 3ms, application-code: 27ms)

@@ -159,7 +159,43 @@ export default function TercerosGeneralPage() {
 
   const handleOpenEdit = (tercero: Tercero) => {
     setIsEditing(true);
-    setFormData(tercero);
+    // Para no romper la vista de edición si tercero viene directo de DB:
+    setFormData({
+      ...tercero,
+      id: tercero.id || "",
+      codigo: tercero.codigo || "",
+      tipoIdentificacion: tercero.tipoIdentificacion || "NIT",
+      nit: tercero.nit || "",
+      dv: tercero.dv || "",
+      razonSocial: tercero.razonSocial || tercero.nombre || "",
+      nombreCompleto: tercero.nombreCompleto || tercero.nombre || "",
+      roles: tercero.roles || {
+        cliente: (tercero.tipo as string) === "cliente" || tercero.tipo === "Cliente",
+        empleado: (tercero.tipo as string) === "vendedor",
+        proveedor: (tercero.tipo as string) === "proveedor" || tercero.tipo === "Proveedor",
+        prospecto: false,
+      },
+      vendedor: tercero.vendedor || "",
+      correo: tercero.correo || "",
+      correoNovedades: tercero.correoNovedades || "",
+      telefono1: tercero.telefono1 || tercero.telefono || "",
+      telefono2: tercero.telefono2 || "",
+      celular: tercero.celular || "",
+      pais: tercero.pais || "Colombia",
+      departamento: tercero.departamento || "",
+      ciudad: tercero.ciudad || "",
+      direccionFiscal: tercero.direccionFiscal || tercero.direccion || "",
+      direccionDespachos: tercero.direccionDespachos || "",
+      cumpleDia: tercero.cumpleDia || "",
+      cumpleMes: tercero.cumpleMes || "",
+      cartera: tercero.cartera || "",
+      formaPago: tercero.formaPago || "",
+      nivelPrecio: tercero.nivelPrecio || "",
+      clasificacion: tercero.clasificacion || "",
+      aplicaCredito: tercero.aplicaCredito || false,
+      observaciones: tercero.observaciones || "",
+      estado: typeof tercero.estado === "boolean" ? (tercero.estado ? "Activo" : "Inactivo") : (tercero.estado || "Activo"),
+    });
     setIsModalOpen(true);
   };
 
@@ -184,7 +220,20 @@ export default function TercerosGeneralPage() {
           terceros.map((t) => (t.id === formData.id ? { ...formData } : t))
         );
       } else {
-        await createTercero(formData);
+        // Mapeo del payload para Supabase
+        const tipoMap = formData.roles.cliente ? "cliente" : formData.roles.proveedor ? "proveedor" : formData.roles.empleado ? "vendedor" : "cliente";
+
+        const payloadSupabase = {
+          nit: formData.nit,
+          nombre: formData.razonSocial || formData.nombreCompleto || "",
+          tipo: tipoMap,
+          telefono: formData.telefono1 || "",
+          direccion: formData.direccionFiscal || "",
+          ciudad: formData.ciudad || "",
+          estado: formData.estado === "Activo",
+        };
+
+        await createTercero(payloadSupabase);
         await fetchTerceros(); // refetch updated data
       }
       setIsModalOpen(false);
@@ -199,14 +248,21 @@ export default function TercerosGeneralPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   const filteredTerceros = terceros.filter((t) => {
-    const matchCodigo = t.codigo.toLowerCase().includes(filterCodigo.toLowerCase());
-    const desc = `${t.razonSocial} ${t.nombreCompleto}`.toLowerCase();
+    const matchCodigo = (t.codigo || "").toLowerCase().includes(filterCodigo.toLowerCase());
+    const desc = `${t.razonSocial || ""} ${t.nombreCompleto || ""} ${t.nombre || ""}`.toLowerCase();
     const matchDesc = desc.includes(filterDescripcion.toLowerCase());
 
-    const matchActivo = filterActivo === "Todos" ? true : (filterActivo === "Sí" && t.estado === "Activo") || (filterActivo === "No" && t.estado === "Inactivo");
-    const matchCliente = filterCliente === "Todos" ? true : (filterCliente === "Sí" && t.roles.cliente) || (filterCliente === "No" && !t.roles.cliente);
-    const matchEmpleado = filterEmpleado === "Todos" ? true : (filterEmpleado === "Sí" && t.roles.empleado) || (filterEmpleado === "No" && !t.roles.empleado);
-    const matchProveedor = filterProveedor === "Todos" ? true : (filterProveedor === "Sí" && t.roles.proveedor) || (filterProveedor === "No" && !t.roles.proveedor);
+    const isActivo = typeof t.estado === "boolean" ? t.estado : t.estado === "Activo";
+    const matchActivo = filterActivo === "Todos" ? true : (filterActivo === "Sí" && isActivo) || (filterActivo === "No" && !isActivo);
+
+    // For mapping role checks, use t.roles if it exists, otherwise rely on t.tipo
+    const isCliente = t.roles?.cliente || (t.tipo as string) === "cliente" || t.tipo === "Cliente";
+    const isEmpleado = t.roles?.empleado || (t.tipo as string) === "vendedor";
+    const isProveedor = t.roles?.proveedor || (t.tipo as string) === "proveedor" || t.tipo === "Proveedor";
+
+    const matchCliente = filterCliente === "Todos" ? true : (filterCliente === "Sí" && isCliente) || (filterCliente === "No" && !isCliente);
+    const matchEmpleado = filterEmpleado === "Todos" ? true : (filterEmpleado === "Sí" && isEmpleado) || (filterEmpleado === "No" && !isEmpleado);
+    const matchProveedor = filterProveedor === "Todos" ? true : (filterProveedor === "Sí" && isProveedor) || (filterProveedor === "No" && !isProveedor);
 
     return matchCodigo && matchDesc && matchActivo && matchCliente && matchEmpleado && matchProveedor;
   });
@@ -382,12 +438,12 @@ export default function TercerosGeneralPage() {
                     <td className="p-5">
                       <span
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                          tercero.estado === "Activo"
+                          (typeof tercero.estado === "boolean" ? tercero.estado : tercero.estado === "Activo")
                             ? "bg-green-50 text-green-700 border border-green-200"
                             : "bg-red-50 text-red-700 border border-red-200"
                         }`}
                       >
-                        {tercero.estado}
+                        {(typeof tercero.estado === "boolean" ? tercero.estado : tercero.estado === "Activo") ? "Activo" : "Inactivo"}
                       </span>
                     </td>
                     <td className="p-5">

@@ -22,9 +22,13 @@ export async function createTercero(data: any) {
         delete insertData.id;
     }
 
-    const { data: result, error } = await supabase.from('terceros').insert(insertData).select().single()
-    if (error) throw error
-    return result
+    console.log("Payload enviado a Supabase:", insertData);
+    const { data: result, error } = await supabase.from('terceros').insert([insertData]).select();
+    if (error) {
+      console.error('Error exacto de Supabase:', error.message, error.details, error.hint);
+      throw new Error(error.message);
+    }
+    return result;
   } catch (error) {
     console.error('Error creating tercero:', error)
     throw error

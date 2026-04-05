@@ -1,67 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Loader2, CheckCircle2 } from "lucide-react";
+import { getBodegas, getProductos, ProductoFiltros } from "@/src/actions/inventario";
+import type { Bodega, Producto } from "@/src/types/database.types";
 
 type ViewMode = "consulta" | "reporte";
-
-// --- Mock Data ---
-interface MockItem {
-  codigo: string;
-  ref: string;
-  desc: string;
-  presentacion: string;
-  paquete: number;
-  bodega: string;
-  saldo: number;
-  reservado: number;
-  disponible: number;
-  transito: number;
-  costo: number;
-}
-
-const mockData: MockItem[] = [
-  {
-    codigo: "101",
-    ref: "CD-18K",
-    desc: "Cadena Lomo Corbina 18k",
-    presentacion: "Unidad",
-    paquete: 1,
-    bodega: "PRINCIPAL",
-    saldo: 50,
-    reservado: 5,
-    disponible: 45,
-    transito: 0,
-    costo: 45000,
-  },
-  {
-    codigo: "102",
-    ref: "AN-18K-01",
-    desc: "Anillo Compromiso 18k",
-    presentacion: "Unidad",
-    paquete: 1,
-    bodega: "PRINCIPAL",
-    saldo: 20,
-    reservado: 2,
-    disponible: 18,
-    transito: 5,
-    costo: 125000,
-  },
-  {
-    codigo: "103",
-    ref: "PU-18K-02",
-    desc: "Pulsera Tejido Cartier 18k",
-    presentacion: "Unidad",
-    paquete: 1,
-    bodega: "MEDELLÍN",
-    saldo: 15,
-    reservado: 0,
-    disponible: 15,
-    transito: 10,
-    costo: 85000,
-  },
-];
 
 export default function UnidadesPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("consulta");
@@ -70,22 +15,54 @@ export default function UnidadesPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
+  const [bodegas, setBodegas] = useState<Bodega[]>([]);
+  const [productos, setProductos] = useState<Producto[]>([]);
+
+  const [filtros, setFiltros] = useState<ProductoFiltros>({
+    ref_fabrica: "",
+    descripcion: "",
+    bodega_id: "",
+  });
+
   // States for "Reporte"
   const [isGenerating, setIsGenerating] = useState(false);
   const [reportGenerated, setReportGenerated] = useState(false);
+
+  // --- Effects ---
+  useEffect(() => {
+    const fetchBodegas = async () => {
+      const { data, error } = await getBodegas();
+      if (error) {
+        alert("Error cargando bodegas");
+      } else if (data) {
+        setBodegas(data);
+      }
+    };
+    fetchBodegas();
+  }, []);
 
   // --- Handlers ---
   const handleToggleView = () => {
     setViewMode(viewMode === "consulta" ? "reporte" : "consulta");
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     setIsSearching(true);
     setHasSearched(false);
-    setTimeout(() => {
+
+    try {
+      const { data, error } = await getProductos(filtros);
+      if (error) {
+        alert("Error buscando productos");
+      } else if (data) {
+        setProductos(data);
+      }
+    } catch {
+      alert("Error inesperado buscando productos");
+    } finally {
       setIsSearching(false);
       setHasSearched(true);
-    }, 1000);
+    }
   };
 
   const handleGenerateReport = () => {
@@ -101,13 +78,13 @@ export default function UnidadesPage() {
 
   // --- Calculations ---
   const totals = hasSearched
-    ? mockData.reduce(
+    ? productos.reduce(
         (acc, item) => ({
-          saldo: acc.saldo + item.saldo,
-          reservado: acc.reservado + item.reservado,
-          disponible: acc.disponible + item.disponible,
-          transito: acc.transito + item.transito,
-          totalCosto: acc.totalCosto + item.costo * item.saldo,
+          saldo: acc.saldo + item.saldo_actual,
+          reservado: acc.reservado + 0, // Fallback as reservado is not in DB schema yet
+          disponible: acc.disponible + item.saldo_actual, // Fallback
+          transito: acc.transito + 0, // Fallback
+          totalCosto: acc.totalCosto + item.costo * item.saldo_actual,
         }),
         { saldo: 0, reservado: 0, disponible: 0, transito: 0, totalCosto: 0 }
       )
@@ -151,6 +128,8 @@ export default function UnidadesPage() {
                       type="text"
                       className="w-full border border-gray-300 rounded-md p-2 focus:ring-[#D3AB80] focus:border-[#D3AB80]"
                       placeholder="Ej. CD-18K"
+                      value={filtros.ref_fabrica || ""}
+                      onChange={(e) => setFiltros({ ...filtros, ref_fabrica: e.target.value })}
                     />
                   </div>
                   <div>
@@ -159,6 +138,8 @@ export default function UnidadesPage() {
                       type="text"
                       className="w-full border border-gray-300 rounded-md p-2 focus:ring-[#D3AB80] focus:border-[#D3AB80]"
                       placeholder="Buscar descripción..."
+                      value={filtros.descripcion || ""}
+                      onChange={(e) => setFiltros({ ...filtros, descripcion: e.target.value })}
                     />
                   </div>
                   <div>
@@ -167,14 +148,20 @@ export default function UnidadesPage() {
                       type="text"
                       className="w-full border border-gray-300 rounded-md p-2 focus:ring-[#D3AB80] focus:border-[#D3AB80]"
                       placeholder="Número de serial"
+                      disabled
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Bodega</label>
-                    <select className="w-full border border-gray-300 rounded-md p-2 focus:ring-[#D3AB80] focus:border-[#D3AB80]">
+                    <select
+                      className="w-full border border-gray-300 rounded-md p-2 focus:ring-[#D3AB80] focus:border-[#D3AB80]"
+                      value={filtros.bodega_id || ""}
+                      onChange={(e) => setFiltros({ ...filtros, bodega_id: e.target.value })}
+                    >
                       <option value="">TODAS</option>
-                      <option value="BODEGA PRINCIPAL DOHA">BODEGA PRINCIPAL DOHA</option>
-                      <option value="BODEGA MEDELLÍN">BODEGA MEDELLÍN</option>
+                      {bodegas.map((b) => (
+                        <option key={b.id} value={b.id}>{b.nombre}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -263,20 +250,20 @@ export default function UnidadesPage() {
                         </tr>
                       )}
 
-                      {hasSearched && mockData.map((item) => (
-                        <tr key={item.codigo} className="hover:bg-gray-50/50">
+                      {hasSearched && productos.map((item) => (
+                        <tr key={item.id} className="hover:bg-gray-50/50">
                           <td className="px-4 py-3">{item.codigo}</td>
-                          <td className="px-4 py-3">{item.ref}</td>
-                          <td className="px-4 py-3 truncate max-w-[200px]" title={item.desc}>{item.desc}</td>
-                          <td className="px-4 py-3">{item.presentacion}</td>
-                          <td className="px-4 py-3 text-center">{item.paquete}</td>
-                          <td className="px-4 py-3">{item.bodega}</td>
-                          <td className="px-4 py-3 text-right font-medium">{item.saldo}</td>
-                          <td className="px-4 py-3 text-right text-orange-600">{item.reservado}</td>
-                          <td className="px-4 py-3 text-right text-green-600">{item.disponible}</td>
-                          <td className="px-4 py-3 text-right text-blue-600">{item.transito}</td>
+                          <td className="px-4 py-3">{item.ref_fabrica || "-"}</td>
+                          <td className="px-4 py-3 truncate max-w-[200px]" title={item.descripcion}>{item.descripcion}</td>
+                          <td className="px-4 py-3">{item.presentacion || "Unidad"}</td>
+                          <td className="px-4 py-3 text-center">1</td>
+                          <td className="px-4 py-3">{bodegas.find(b => b.id === item.bodega_id)?.nombre || "-"}</td>
+                          <td className="px-4 py-3 text-right font-medium">{item.saldo_actual}</td>
+                          <td className="px-4 py-3 text-right text-orange-600">0</td>
+                          <td className="px-4 py-3 text-right text-green-600">{item.saldo_actual}</td>
+                          <td className="px-4 py-3 text-right text-blue-600">0</td>
                           <td className="px-4 py-3 text-right">${item.costo.toLocaleString()}</td>
-                          <td className="px-4 py-3 text-right font-medium">${(item.costo * item.saldo).toLocaleString()}</td>
+                          <td className="px-4 py-3 text-right font-medium">${(item.costo * item.saldo_actual).toLocaleString()}</td>
                         </tr>
                       ))}
                     </tbody>

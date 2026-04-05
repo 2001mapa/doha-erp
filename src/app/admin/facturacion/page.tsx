@@ -64,7 +64,11 @@ export default function FacturacionDashboard() {
                 </p>
               </div>
               <div className="mt-6 flex items-center text-[#D3AB80] text-sm font-medium">
-                Acceder <ArrowRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                Acceder{" "}
+                <ArrowRight
+                  size={16}
+                  className="ml-1 group-hover:translate-x-1 transition-transform"
+                />
               </div>
             </div>
           </Link>
@@ -87,7 +91,11 @@ export default function FacturacionDashboard() {
                 </p>
               </div>
               <div className="mt-6 flex items-center text-[#D3AB80] text-sm font-medium">
-                Acceder <ArrowRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                Acceder{" "}
+                <ArrowRight
+                  size={16}
+                  className="ml-1 group-hover:translate-x-1 transition-transform"
+                />
               </div>
             </div>
           </Link>
@@ -110,7 +118,11 @@ export default function FacturacionDashboard() {
                 </p>
               </div>
               <div className="mt-6 flex items-center text-[#D3AB80] text-sm font-medium">
-                Acceder <ArrowRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                Acceder{" "}
+                <ArrowRight
+                  size={16}
+                  className="ml-1 group-hover:translate-x-1 transition-transform"
+                />
               </div>
             </div>
           </Link>
@@ -133,7 +145,11 @@ export default function FacturacionDashboard() {
                 </p>
               </div>
               <div className="mt-6 flex items-center text-[#D3AB80] text-sm font-medium">
-                Acceder <ArrowRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                Acceder{" "}
+                <ArrowRight
+                  size={16}
+                  className="ml-1 group-hover:translate-x-1 transition-transform"
+                />
               </div>
             </div>
           </Link>
@@ -155,16 +171,26 @@ export default function FacturacionDashboard() {
               </p>
             </div>
             <div className="mt-6 flex flex-col gap-2">
-              <Link href="/admin/facturacion/reportes/cuadre">
+              <Link href="/admin/facturacion/reportes/cuadre-diario">
                 <div className="w-full text-left py-2 px-3 rounded-lg hover:bg-[#fdfbf9] border border-transparent hover:border-[#D3AB80]/30 transition-colors flex items-center justify-between group/btn">
-                  <span className="text-[#472825] text-sm font-medium">Cuadre Diario</span>
-                  <ArrowRight size={14} className="text-[#D3AB80] opacity-0 group-hover/btn:opacity-100 group-hover/btn:translate-x-1 transition-all" />
+                  <span className="text-[#472825] text-sm font-medium">
+                    Cuadre Diario
+                  </span>
+                  <ArrowRight
+                    size={14}
+                    className="text-[#D3AB80] opacity-0 group-hover/btn:opacity-100 group-hover/btn:translate-x-1 transition-all"
+                  />
                 </div>
               </Link>
-              <Link href="/admin/facturacion/reportes/utilidad">
+              <Link href="/admin/facturacion/reportes/utilidad-bruta">
                 <div className="w-full text-left py-2 px-3 rounded-lg hover:bg-[#fdfbf9] border border-transparent hover:border-[#D3AB80]/30 transition-colors flex items-center justify-between group/btn">
-                  <span className="text-[#472825] text-sm font-medium">Utilidad Bruta</span>
-                  <ArrowRight size={14} className="text-[#D3AB80] opacity-0 group-hover/btn:opacity-100 group-hover/btn:translate-x-1 transition-all" />
+                  <span className="text-[#472825] text-sm font-medium">
+                    Utilidad Bruta
+                  </span>
+                  <ArrowRight
+                    size={14}
+                    className="text-[#D3AB80] opacity-0 group-hover/btn:opacity-100 group-hover/btn:translate-x-1 transition-all"
+                  />
                 </div>
               </Link>
             </div>

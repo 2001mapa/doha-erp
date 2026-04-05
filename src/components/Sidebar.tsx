@@ -207,7 +207,7 @@ const menuItems = [
           },
           {
             name: "Utilidad Bruta",
-            href: "/admin/facturacion/reportes/utilidad",
+            href: "/admin/facturacion/reportes/utilidad-bruta",
           },
         ],
       },

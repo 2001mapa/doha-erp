@@ -70,6 +70,7 @@ export default function RolesPage() {
     setIsModalOpen(true);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleOpenEdit = (rol: any) => {
     setFormData(rol);
     setIsEditing(true);

@@ -42,6 +42,7 @@ export default function UnidadesPage() {
     setIsModalOpen(true);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleOpenEdit = (unidad: any) => {
     setFormData(unidad);
     setIsEditing(true);

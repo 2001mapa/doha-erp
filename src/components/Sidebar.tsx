@@ -289,13 +289,13 @@ export const DohaSidebar = () => {
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="mb-10 px-2 flex items-center justify-between">
+        <div className="shrink-0 mb-10 px-2 flex items-center justify-between">
           <h1 className="text-2xl font-black bg-linear-to-r from-amber-200 to-amber-500 bg-clip-text text-transparent">
             DOHA 18K
           </h1>
         </div>
 
-        <nav className="flex-1 space-y-2 overflow-y-auto pr-2 scrollbar-none">
+        <nav className="flex-1 space-y-2 overflow-y-auto pr-2 scrollbar-none pb-24">
           {filteredMenuItems.map((item) => (
             <div key={item.name} className="group">
               {item.subItems ? (
@@ -319,7 +319,7 @@ export const DohaSidebar = () => {
                   </button>
 
                   <div
-                    className={`overflow-hidden transition-all duration-300 ${openSubmenu === item.name ? "max-h-60 mt-1" : "max-h-0"}`}
+                    className={`overflow-hidden transition-all duration-300 ${openSubmenu === item.name ? "max-h-[800px] mt-1" : "max-h-0"}`}
                   >
                     <div className="flex flex-col pl-9 pr-3 space-y-1 border-l-2 border-zinc-800 ml-3">
                       {item.subItems.map((sub) => {
@@ -344,7 +344,7 @@ export const DohaSidebar = () => {
                                 />
                               </button>
                               <div
-                                className={`overflow-hidden transition-all duration-300 ${openNestedSubmenu === sub.name ? "max-h-40" : "max-h-0"}`}
+                                className={`overflow-hidden transition-all duration-300 ${openNestedSubmenu === sub.name ? "max-h-[400px]" : "max-h-0"}`}
                               >
                                 <div className="flex flex-col pl-6 pr-3 space-y-1 border-l border-zinc-800 ml-3 mb-2">
                                   {sub.subItems?.map((nestedSub) => (
@@ -396,7 +396,7 @@ export const DohaSidebar = () => {
         </nav>
 
         {user && (
-          <div className="mt-auto pt-6 border-t border-zinc-800">
+          <div className="shrink-0 bg-zinc-950 mt-auto pt-6 border-t border-zinc-800">
             <div className="mb-4 px-2">
               <p className="text-sm font-bold text-white">{user.nombre}</p>
               <p className="text-xs text-zinc-400">{user.rol}</p>

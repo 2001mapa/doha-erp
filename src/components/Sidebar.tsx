@@ -203,7 +203,7 @@ const menuItems = [
         subItems: [
           {
             name: "Cuadre Diario",
-            href: "/admin/facturacion/reportes/cuadre",
+            href: "/admin/facturacion/reportes/cuadre-diario",
           },
           {
             name: "Utilidad Bruta",

@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Edit2, Trash2, X, Check, XCircle } from "lucide-react";
+import { Plus, Edit2, Trash2, X, Check, XCircle, RefreshCw } from "lucide-react";
+import { getConceptos } from "@/src/actions/conceptos";
 
 type Concepto = {
   id: number;
@@ -16,46 +17,34 @@ type Concepto = {
   cuenta: string;
 };
 
-const mockData: Concepto[] = [
-  {
-    id: 1,
-    codigo: "C1",
-    descripcion: "CUENTAS X COBRAR",
-    tipo: "I",
-    restringido: false,
-    activo: true,
-    ajusteRc: false,
-    edades: true,
-    cuenta: "13050501 - CLIENTES NACIONALES",
-  },
-  {
-    id: 2,
-    codigo: "C2",
-    descripcion: "CUENTAS X PAGAR",
-    tipo: "E",
-    restringido: true,
-    activo: true,
-    ajusteRc: false,
-    edades: false,
-    cuenta: "22050501 - PROVEEDORES NACIONALES",
-  },
-  {
-    id: 3,
-    codigo: "AVR",
-    descripcion: "AVERIAS Y FALTANTES",
-    tipo: "A",
-    restringido: false,
-    activo: true,
-    ajusteRc: true,
-    edades: false,
-    cuenta: "51959504 - AVERIAS",
-  },
-];
-
 export default function ConceptosCarteraPage() {
-  const [conceptos] = useState<Concepto[]>(mockData);
+  const [conceptos, setConceptos] = useState<Concepto[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+
+  const fetchConceptos = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await getConceptos();
+      // Ensure the returned data matches the Concepto type or provide defaults if needed
+      // Assuming Supabase returns similar data structure but we can map it if it uses snake_case, etc.
+      // For now, assuming it matches exactly or is close enough.
+      setConceptos(data as Concepto[]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setError(err.message || 'Error al cargar los conceptos');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchConceptos();
+  }, []);
 
   const openModal = (id: number | null = null) => {
     setEditingId(id);
@@ -71,7 +60,10 @@ export default function ConceptosCarteraPage() {
     <div className="min-h-screen bg-[#fdfbf9] text-[#472825] font-sans">
       <div className="max-w-7xl mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Conceptos de Cartera</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold">Conceptos de Cartera</h1>
+            {isLoading && <RefreshCw size={20} className="animate-spin text-[#D3AB80]" />}
+          </div>
           <button
             onClick={() => openModal(null)}
             className="flex items-center gap-2 bg-[#D3AB80] text-white px-4 py-2 rounded-md hover:bg-[#c29b70] transition-colors"
@@ -80,6 +72,15 @@ export default function ConceptosCarteraPage() {
             <span>Nuevo Concepto</span>
           </button>
         </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6 flex justify-between items-center">
+            <p>{error}</p>
+            <button onClick={fetchConceptos} className="text-sm underline hover:no-underline">
+              Reintentar
+            </button>
+          </div>
+        )}
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-max">
@@ -97,9 +98,22 @@ export default function ConceptosCarteraPage() {
               </tr>
             </thead>
             <tbody>
-              {conceptos.map((concepto) => (
-                <tr key={concepto.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="p-4 font-medium">{concepto.codigo}</td>
+              {isLoading && conceptos.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="p-8 text-center text-gray-500">
+                    Cargando conceptos...
+                  </td>
+                </tr>
+              ) : conceptos.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="p-8 text-center text-gray-500">
+                    No hay conceptos registrados.
+                  </td>
+                </tr>
+              ) : (
+                conceptos.map((concepto) => (
+                  <tr key={concepto.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td className="p-4 font-medium">{concepto.codigo}</td>
                   <td className="p-4">{concepto.descripcion}</td>
                   <td className="p-4 font-medium">
                     {concepto.tipo === "I" ? "Ingreso" : concepto.tipo === "E" ? "Egreso" : "Ajuste"}
@@ -151,7 +165,8 @@ export default function ConceptosCarteraPage() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              ))
+            )}
             </tbody>
           </table>
         </div>

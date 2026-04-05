@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search, Edit, Trash2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getTerceros, createTercero } from "@/src/actions/terceros";
 
 type Tercero = {
   id: string;
@@ -44,72 +45,9 @@ type Tercero = {
   direccion?: string;
 };
 
-// Mock inicial
-const initialTerceros: Tercero[] = [
-  {
-    id: "1",
-    codigo: "TERC-001",
-    tipoIdentificacion: "NIT",
-    nit: "900123456",
-    dv: "1",
-    razonSocial: "Joyería El Diamante S.A.S",
-    nombreCompleto: "Joyería El Diamante",
-    roles: { cliente: false, empleado: false, proveedor: true, prospecto: false },
-    vendedor: "Vendedor 1",
-    correo: "contacto@eldiamante.com",
-    correoNovedades: "novedades@eldiamante.com",
-    telefono1: "3001234567",
-    telefono2: "",
-    celular: "3001234567",
-    pais: "Colombia",
-    departamento: "Bogotá D.C.",
-    ciudad: "Bogotá",
-    direccionFiscal: "Centro de Bogotá, Calle 14",
-    direccionDespachos: "Centro de Bogotá, Calle 14",
-    cumpleDia: "",
-    cumpleMes: "",
-    cartera: "Contado",
-    formaPago: "Efectivo",
-    nivelPrecio: "Distribuidor",
-    clasificacion: "A",
-    aplicaCredito: false,
-    observaciones: "Excelente proveedor",
-    estado: "Activo",
-  },
-  {
-    id: "2",
-    codigo: "TERC-002",
-    tipoIdentificacion: "CC",
-    nit: "1020304050",
-    dv: "",
-    razonSocial: "",
-    nombreCompleto: "María Fernanda López",
-    roles: { cliente: true, empleado: false, proveedor: false, prospecto: false },
-    vendedor: "Vendedor 2",
-    correo: "mafe.lopez@email.com",
-    correoNovedades: "",
-    telefono1: "3159876543",
-    telefono2: "",
-    celular: "3159876543",
-    pais: "Colombia",
-    departamento: "Valle del Cauca",
-    ciudad: "Cali",
-    direccionFiscal: "Norte de Cali, Cra 50",
-    direccionDespachos: "Norte de Cali, Cra 50",
-    cumpleDia: "15",
-    cumpleMes: "08",
-    cartera: "30 Días",
-    formaPago: "Transferencia",
-    nivelPrecio: "Detal",
-    clasificacion: "B",
-    aplicaCredito: true,
-    observaciones: "Cliente frecuente",
-    estado: "Activo",
-  },
-];
-
 export default function TercerosGeneralPage() {
-  const [terceros, setTerceros] = useState<Tercero[]>(initialTerceros);
+  const [terceros, setTerceros] = useState<Tercero[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   // const [searchTerm, setSearchTerm] = useState("");
@@ -159,6 +97,24 @@ export default function TercerosGeneralPage() {
   const [filterCliente, setFilterCliente] = useState("Todos");
   const [filterEmpleado, setFilterEmpleado] = useState("Todos");
   const [filterProveedor, setFilterProveedor] = useState("Todos");
+
+  const fetchTerceros = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getTerceros();
+      if (data) {
+        setTerceros(data);
+      }
+    } catch (error) {
+      console.error("Error fetching terceros:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTerceros();
+  }, []);
 
   const handleOpenNew = () => {
     setIsEditing(false);
@@ -219,20 +175,28 @@ export default function TercerosGeneralPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isEditing) {
-      setTerceros(
-        terceros.map((t) => (t.id === formData.id ? { ...formData } : t))
-      );
-    } else {
-      setTerceros([
-        ...terceros,
-        { ...formData, id: Date.now().toString() },
-      ]);
+    setIsSaving(true);
+    try {
+      if (isEditing) {
+        setTerceros(
+          terceros.map((t) => (t.id === formData.id ? { ...formData } : t))
+        );
+      } else {
+        await createTercero(formData);
+        await fetchTerceros(); // refetch updated data
+      }
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error saving tercero:", error);
+      alert("Error al guardar el tercero");
+    } finally {
+      setIsSaving(false);
     }
-    setIsModalOpen(false);
   };
+
+  const [isSaving, setIsSaving] = useState(false);
 
   const filteredTerceros = terceros.filter((t) => {
     const matchCodigo = t.codigo.toLowerCase().includes(filterCodigo.toLowerCase());
@@ -246,6 +210,14 @@ export default function TercerosGeneralPage() {
 
     return matchCodigo && matchDesc && matchActivo && matchCliente && matchEmpleado && matchProveedor;
   });
+
+  if (isLoading) {
+    return (
+      <div className="max-w-[1600px] mx-auto p-6 min-h-screen flex items-center justify-center">
+        <p className="text-gray-500 font-medium text-lg">Cargando clientes...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-6xl mx-auto w-full bg-[#fdfbf9] min-h-screen text-[#472825]">
@@ -917,9 +889,10 @@ export default function TercerosGeneralPage() {
                 <button
                   type="submit"
                   form="terceroForm"
-                  className="bg-[#D3AB80] text-white px-8 py-2.5 rounded-xl text-sm font-bold hover:bg-[#b8946d] transition-all shadow-md"
+                  disabled={isSaving}
+                  className="bg-[#D3AB80] text-white px-8 py-2.5 rounded-xl text-sm font-bold hover:bg-[#b8946d] transition-all shadow-md disabled:opacity-50"
                 >
-                  Guardar Tercero
+                  {isSaving ? "Guardando..." : "Guardar Tercero"}
                 </button>
               </div>
             </motion.div>

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Plus, Search, Edit, Trash2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getTerceros, createTercero } from "@/src/actions/terceros";
+import { Country, State, City } from "country-state-city";
 
 type Tercero = {
   id: string;
@@ -97,6 +98,10 @@ export default function TercerosGeneralPage() {
   const [filterCliente, setFilterCliente] = useState("Todos");
   const [filterEmpleado, setFilterEmpleado] = useState("Todos");
   const [filterProveedor, setFilterProveedor] = useState("Todos");
+
+  // Geographic Selectors State
+  const [selectedCountryCode, setSelectedCountryCode] = useState("CO");
+  const [selectedStateCode, setSelectedStateCode] = useState("");
 
   const fetchTerceros = async () => {
     setIsLoading(true);
@@ -750,25 +755,53 @@ export default function TercerosGeneralPage() {
                             <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">País</label>
                             <select
                               name="pais"
-                              value={formData.pais}
-                              onChange={handleChange}
+                              value={selectedCountryCode}
+                              onChange={(e) => {
+                                const countryCode = e.target.value;
+                                const countryName = e.target.options[e.target.selectedIndex].text;
+                                setSelectedCountryCode(countryCode);
+                                setSelectedStateCode("");
+                                setFormData({
+                                  ...formData,
+                                  pais: countryName,
+                                  departamento: "",
+                                  ciudad: "",
+                                });
+                              }}
                               className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
                             >
-                              <option value="Colombia">Colombia</option>
+                              <option value="">Seleccionar...</option>
+                              {Country.getAllCountries().map((country) => (
+                                <option key={country.isoCode} value={country.isoCode}>
+                                  {country.name}
+                                </option>
+                              ))}
                             </select>
                           </div>
                           <div className="space-y-1.5">
                             <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Departamento</label>
                             <select
                               name="departamento"
-                              value={formData.departamento}
-                              onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                              value={selectedStateCode}
+                              disabled={!selectedCountryCode}
+                              onChange={(e) => {
+                                const stateCode = e.target.value;
+                                const stateName = e.target.options[e.target.selectedIndex].text;
+                                setSelectedStateCode(stateCode);
+                                setFormData({
+                                  ...formData,
+                                  departamento: stateName,
+                                  ciudad: "",
+                                });
+                              }}
+                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825] disabled:opacity-50"
                             >
                               <option value="">Seleccionar...</option>
-                              <option value="Antioquia">Antioquia</option>
-                              <option value="Bogotá D.C.">Bogotá D.C.</option>
-                              <option value="Valle del Cauca">Valle del Cauca</option>
+                              {State.getStatesOfCountry(selectedCountryCode).map((state) => (
+                                <option key={state.isoCode} value={state.isoCode}>
+                                  {state.name}
+                                </option>
+                              ))}
                             </select>
                           </div>
                           <div className="space-y-1.5">
@@ -776,13 +809,19 @@ export default function TercerosGeneralPage() {
                             <select
                               name="ciudad"
                               value={formData.ciudad}
-                              onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                              disabled={!selectedStateCode}
+                              onChange={(e) => {
+                                const cityName = e.target.value;
+                                setFormData({ ...formData, ciudad: cityName });
+                              }}
+                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825] disabled:opacity-50"
                             >
                               <option value="">Seleccionar...</option>
-                              <option value="Medellín">Medellín</option>
-                              <option value="Bogotá">Bogotá</option>
-                              <option value="Cali">Cali</option>
+                              {City.getCitiesOfState(selectedCountryCode, selectedStateCode).map((city) => (
+                                <option key={city.name} value={city.name}>
+                                  {city.name}
+                                </option>
+                              ))}
                             </select>
                           </div>
 

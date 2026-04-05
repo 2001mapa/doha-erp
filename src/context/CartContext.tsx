@@ -31,7 +31,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (storedCart) {
         try {
           setCartItems(JSON.parse(storedCart));
-        } catch (_e) {
+        } catch {
           console.error("Failed to parse cart items from local storage");
         }
       }

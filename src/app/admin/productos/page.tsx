@@ -74,6 +74,7 @@ export default function CatalogoProductosPage() {
   };
 
   // Open Modal for Edit
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleOpenEdit = (producto: any) => {
     setIsEditing(true);
     setFormData({

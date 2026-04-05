@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Plus, Search, Edit, Trash2, X, Phone, Mail, MapPin, Building2, UserCircle } from "lucide-react";
+import { Plus, Search, Edit, Trash2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Tercero = {
@@ -112,7 +112,7 @@ export default function TercerosGeneralPage() {
   const [terceros, setTerceros] = useState<Tercero[]>(initialTerceros);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  // const [searchTerm, setSearchTerm] = useState("");
 
   const [formData, setFormData] = useState<Tercero>({
     id: "",

@@ -11,7 +11,6 @@ import {
   XCircle,
   X,
   Mail,
-  Lock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -61,6 +60,7 @@ export default function UsuariosPage() {
   };
 
   // Abrir modal para editar
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleOpenEdit = (usuario: any) => {
     setFormData(usuario);
     setIsEditing(true);

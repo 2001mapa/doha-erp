@@ -36,6 +36,7 @@ export interface Producto {
 export interface Factura {
   id: string; // UUID
   documento?: string | null;
+  numero_factura?: string | null;
   fecha?: string | null;
   cliente_id?: string | null; // UUID referencing Tercero
   valor_bruto?: number | null;

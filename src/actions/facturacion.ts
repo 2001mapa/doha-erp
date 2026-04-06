@@ -8,6 +8,12 @@ export async function createFacturaCompleta(
   arrayDetalles: Omit<DetalleFactura, "id" | "factura_id" | "created_at">[]
 ) {
   try {
+    // Autogenerar número de factura si no viene del frontend
+    if (!datosFactura.numero_factura) {
+      const prefijo = datosFactura.documento?.split(' ')[0] || 'FAC'; // Toma "REM" o "FC", o usa "FAC"
+      datosFactura.numero_factura = `${prefijo}-${Date.now().toString().slice(-6)}`;
+    }
+
     // 1. Insert Factura
     const { data: facturaData, error: facturaError } = await supabase
       .from("facturas")
@@ -65,6 +71,7 @@ export async function createFacturaCompleta(
     }
 
     return { success: true, facturaId };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     console.error("Unexpected error in createFacturaCompleta:", err);
     return { success: false, error: "Error inesperado al crear la factura" };

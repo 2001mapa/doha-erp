@@ -82,6 +82,105 @@ export async function createFacturaCompleta(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function updateFactura(id: string, nuevosDatos: any) {
+  try {
+    const { datosFactura, arrayDetalles } = nuevosDatos;
+
+    // 1. Update Factura
+    const { error: facturaError } = await supabase
+      .from("facturas")
+      .update(datosFactura)
+      .eq("id", id);
+
+    if (facturaError) {
+      console.error("Error updating factura:", facturaError.message, facturaError.details, facturaError.hint);
+      return { success: false, error: facturaError.message };
+    }
+
+    // 2. Fetch old detalles to reverse stock
+    const { data: oldDetalles, error: oldDetallesError } = await supabase
+      .from("detalles_factura")
+      .select("producto_id, cantidad")
+      .eq("factura_id", id);
+
+    if (!oldDetallesError && oldDetalles) {
+      for (const detalle of oldDetalles) {
+        const { data: productData, error: productQueryError } = await supabase
+          .from("productos")
+          .select("saldo_actual")
+          .eq("id", detalle.producto_id)
+          .single();
+
+        if (!productQueryError && productData) {
+          const newSaldo = (productData.saldo_actual || 0) + detalle.cantidad;
+          await supabase
+            .from("productos")
+            .update({ saldo_actual: newSaldo })
+            .eq("id", detalle.producto_id);
+        }
+      }
+    }
+
+    // 3. Delete old detalles
+    const { error: deleteError } = await supabase
+      .from("detalles_factura")
+      .delete()
+      .eq("factura_id", id);
+
+    if (deleteError) {
+      console.error("Error deleting old detalles:", deleteError.message);
+      return { success: false, error: deleteError.message };
+    }
+
+    // 4. Map and Insert New Detalles
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const detallesLimpios = arrayDetalles.map((detalle: any) => ({
+      factura_id: id,
+      producto_id: detalle.producto_id || detalle.id,
+      cantidad: Number(detalle.cantidad),
+      precio_unitario: Number(detalle.precio_unitario || detalle.precio || detalle.costo)
+    }));
+
+    const { error: detallesError } = await supabase
+      .from("detalles_factura")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .insert(detallesLimpios as any);
+
+    if (detallesError) {
+      console.error("Error inserting new detalles:", detallesError.message, detallesError.details, detallesError.hint);
+      return { success: false, error: detallesError.message };
+    }
+
+    // 5. Update Productos saldo_actual for new detalles
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const detalle of arrayDetalles as any[]) {
+      const prodId = detalle.producto_id || detalle.id;
+      const { data: productData, error: productQueryError } = await supabase
+        .from("productos")
+        .select("saldo_actual")
+        .eq("id", prodId)
+        .single();
+
+      if (!productQueryError) {
+        const currentSaldo = productData?.saldo_actual || 0;
+        const newSaldo = currentSaldo - detalle.cantidad;
+
+        await supabase
+          .from("productos")
+          .update({ saldo_actual: newSaldo })
+          .eq("id", prodId);
+      }
+    }
+
+    return { success: true, facturaId: id };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
+    console.error("Unexpected error in updateFactura:", err);
+    return { success: false, error: "Error inesperado al actualizar la factura" };
+  }
+}
+
 export async function getFacturas() {
   try {
     const { data, error } = await supabase

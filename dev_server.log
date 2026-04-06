@@ -5,12 +5,30 @@
 ▲ Next.js 16.2.1 (Turbopack)
 - Local:         http://localhost:3000
 - Network:       http://192.168.0.2:3000
-✓ Ready in 502ms
+- Environments: .env.local
+✓ Ready in 540ms
 
 ○ Compiling /admin/login ...
- GET /admin/login 200 in 4.8s (next.js: 4.2s, application-code: 577ms)
- GET /admin 200 in 848ms (next.js: 798ms, application-code: 50ms)
- GET /admin/facturacion/devoluciones 200 in 2.1s (next.js: 2.1s, application-code: 60ms)
- GET /admin/login 200 in 80ms (next.js: 5ms, application-code: 75ms)
- GET /admin 200 in 33ms (next.js: 4ms, application-code: 28ms)
- GET /admin/facturacion/devoluciones 200 in 30ms (next.js: 3ms, application-code: 27ms)
+ GET /admin/login 200 in 6.2s (next.js: 5.5s, application-code: 647ms)
+ GET /admin 200 in 998ms (next.js: 951ms, application-code: 48ms)
+○ Compiling /admin/facturacion/facturas ...
+ GET /admin/login 200 in 79ms (next.js: 6ms, application-code: 73ms)
+ GET /admin 200 in 35ms (next.js: 5ms, application-code: 30ms)
+ GET /admin/facturacion/facturas 200 in 307ms (next.js: 5ms, application-code: 302ms)
+ GET /admin/login 200 in 37ms (next.js: 7ms, application-code: 30ms)
+ GET /admin/login 200 in 87ms (next.js: 5ms, application-code: 82ms)
+ GET /admin 200 in 39ms (next.js: 5ms, application-code: 34ms)
+ GET /admin/facturacion/facturas 200 in 104ms (next.js: 11ms, application-code: 93ms)
+Error inserting factura: TypeError: fetch failed TypeError: fetch failed
+
+Caused by: Error: connect ECONNREFUSED 127.0.0.1:54321 (ECONNREFUSED)
+Error: connect ECONNREFUSED 127.0.0.1:54321
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+ POST /admin/facturacion/facturas 200 in 99ms (next.js: 9ms, application-code: 90ms)
+  └─ ƒ createFacturaCompleta({"documento":"FV-4459","estado":"Pendiente","fecha":"4/6/2026","...":"3 items not stringified"}, [{"cantidad":1,"nombre":"Anillo de Oro 18k","precio_unitario":1200000,"...":"2 items not stringified"}]) in 31ms src/actions/facturacion.ts
+[Server HMR] Update failed, full reload needed: SyntaxError: Identifier 'generarFacturaPDF' has already been declared
+    at eval (<anonymous>)
+[Server HMR] Listener error: SyntaxError: Identifier 'generarFacturaPDF' has already been declared
+    at eval (<anonymous>)
+✓ Compiled in 54ms

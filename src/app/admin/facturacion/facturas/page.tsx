@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Settings, FileSpreadsheet, Search, Download, Trash2, Edit } from "lucide-react";
+import { Plus, Settings, FileSpreadsheet, Search, Download, Trash2, Edit, FileText } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { createFacturaCompleta } from "@/src/actions/facturacion";
+import { generarFacturaPDF } from "@/src/utils/exportPdf";
 
 // Mock Data Interfaces
 interface Factura {
@@ -35,6 +37,7 @@ export default function FacturasPage() {
   // State for modals
   const [showNewModal, setShowNewModal] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // State for mock data
   const [facturas, setFacturas] = useState<Factura[]>([
@@ -94,6 +97,65 @@ export default function FacturasPage() {
   // Handlers for deleting rows
   const handleDeleteFactura = (id: string) => {
     setFacturas(facturas.filter((f) => f.id !== id));
+  };
+
+  const handleSaveNuevaFactura = async () => {
+    setIsSaving(true);
+    try {
+      // Mocking selected client and details data
+      const clienteMock = {
+        nombre: "CLIENTE VIP 1",
+        nit: "900.123.456-7"
+      };
+
+      const facturaMockPayload = {
+        documento: `FV-${Math.floor(Math.random() * 10000)}`,
+        fecha: new Date().toLocaleDateString(),
+        valor_bruto: 1200000,
+        impuesto: 228000,
+        total: 1428000,
+        estado: "Pendiente"
+      };
+
+      const detallesMockPayload = [
+        {
+          producto_id: "00000000-0000-0000-0000-000000000000", // Would be actual UUID in prod
+          cantidad: 1,
+          precio_unitario: 1200000,
+          subtotal: 1200000,
+          nombre: "Anillo de Oro 18k"
+        }
+      ];
+
+      const res = await createFacturaCompleta(facturaMockPayload, detallesMockPayload);
+
+      if (res.success) {
+        // Add to local state to reflect UI changes immediately
+        const newFactura: Factura = {
+          id: res.facturaId || Math.random().toString(),
+          documento: facturaMockPayload.documento,
+          fecha: facturaMockPayload.fecha,
+          nit: clienteMock.nit,
+          tercero: clienteMock.nombre,
+          vendedor: "Vendedor Actual",
+          ciudad: "Ciudad Actual",
+          valorBruto: facturaMockPayload.valor_bruto,
+          impuesto: facturaMockPayload.impuesto,
+          total: facturaMockPayload.total,
+          estado: facturaMockPayload.estado,
+          detalles: "Ver",
+          entregado: "NO",
+        };
+        setFacturas([newFactura, ...facturas]);
+        setShowNewModal(false);
+      } else {
+        alert("Error al guardar: " + res.error);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -281,6 +343,20 @@ export default function FacturasPage() {
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
+                      <button
+                        onClick={() => {
+                          const cliente = { nombre: f.tercero, nit: f.nit };
+                          // Mocking details for the PDF export based on the row
+                          const detalles = [
+                            { nombre: "Producto 1", cantidad: 1, precio_unitario: f.valorBruto, subtotal: f.valorBruto }
+                          ];
+                          generarFacturaPDF(f, detalles, cliente);
+                        }}
+                        className="text-blue-500 hover:text-blue-600 transition-colors"
+                        title="Descargar PDF"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </button>
                     </td>
                     <td className="p-4 font-medium">{f.documento}</td>
                     <td className="p-4">{f.fecha}</td>
@@ -346,15 +422,17 @@ export default function FacturasPage() {
               <div className="flex justify-end space-x-3">
                 <button
                   onClick={() => setShowNewModal(false)}
-                  className="px-4 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded font-semibold transition-colors"
+                  disabled={isSaving}
+                  className="px-4 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded font-semibold transition-colors disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
-                  onClick={() => setShowNewModal(false)}
-                  className="px-4 py-2 bg-[#D3AB80] hover:bg-[#c29b70] text-white rounded font-bold transition-colors"
+                  onClick={handleSaveNuevaFactura}
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-[#D3AB80] hover:bg-[#c29b70] text-white rounded font-bold transition-colors disabled:opacity-50"
                 >
-                  Aceptar
+                  {isSaving ? "Guardando..." : "Aceptar"}
                 </button>
               </div>
             </motion.div>

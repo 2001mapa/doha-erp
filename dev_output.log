@@ -5,18 +5,75 @@
 ▲ Next.js 16.2.1 (Turbopack)
 - Local:         http://localhost:3000
 - Network:       http://192.168.0.2:3000
-✓ Ready in 535ms
+✓ Ready in 533ms
 
 ○ Compiling /admin/login ...
- GET /admin/login 200 in 5.0s (next.js: 4.4s, application-code: 531ms)
- GET /admin 200 in 803ms (next.js: 752ms, application-code: 51ms)
- GET /admin/login 200 in 84ms (next.js: 6ms, application-code: 78ms)
- GET /admin 200 in 31ms (next.js: 5ms, application-code: 26ms)
- GET /admin/login 200 in 72ms (next.js: 4ms, application-code: 68ms)
- GET /admin 200 in 33ms (next.js: 3ms, application-code: 29ms)
- GET /admin/login 200 in 64ms (next.js: 4ms, application-code: 60ms)
- GET /admin 200 in 32ms (next.js: 3ms, application-code: 28ms)
- GET /admin/login 200 in 82ms (next.js: 5ms, application-code: 77ms)
+ GET /admin/login 200 in 3.8s (next.js: 3.5s, application-code: 353ms)
+ GET /admin 200 in 562ms (next.js: 509ms, application-code: 52ms)
+ GET /admin/login 200 in 113ms (next.js: 7ms, application-code: 106ms)
+ GET /admin 200 in 31ms (next.js: 4ms, application-code: 27ms)
+ GET /admin/login 200 in 68ms (next.js: 4ms, application-code: 64ms)
+ GET /admin 200 in 31ms (next.js: 4ms, application-code: 28ms)
+ GET /admin/inventario/unidades 200 in 2.2s (next.js: 2.1s, application-code: 42ms)
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabaseClient.ts:6:37)
+    at module evaluation (src/actions/inventario.ts:3:1)
+    at module evaluation (.next-internal/server/app/admin/inventario/unidades/page/actions.js (server actions loader):1:1)
+    at module evaluation (.next/dev/server/chunks/ssr/_10z.j02._.js:153:394)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    |                                     ^
+  7 | {
+  digest: '4002205756'
+}
+ POST /admin/inventario/unidades 500 in 825ms (next.js: 4ms, application-code: 822ms)
+ GET /admin/login 200 in 65ms (next.js: 5ms, application-code: 60ms)
  GET /admin 200 in 34ms (next.js: 4ms, application-code: 30ms)
- GET /admin/contabilidad/reportes 200 in 732ms (next.js: 689ms, application-code: 43ms)
- GET /admin/contabilidad/reportes/balance 200 in 643ms (next.js: 593ms, application-code: 50ms)
+ GET /admin/inventario/unidades 200 in 29ms (next.js: 3ms, application-code: 26ms)
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabaseClient.ts:6:37)
+    at module evaluation (src/actions/inventario.ts:3:1)
+    at module evaluation (.next-internal/server/app/admin/inventario/unidades/page/actions.js (server actions loader):1:1)
+    at module evaluation (.next/dev/server/chunks/ssr/_10z.j02._.js:153:394)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    |                                     ^
+  7 | {
+  digest: '4002205756'
+}
+ POST /admin/inventario/unidades 500 in 520ms (next.js: 3ms, application-code: 517ms)
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabaseClient.ts:6:37)
+    at module evaluation (src/actions/inventario.ts:3:1)
+    at module evaluation (.next-internal/server/app/admin/inventario/unidades/page/actions.js (server actions loader):1:1)
+    at module evaluation (.next/dev/server/chunks/ssr/_10z.j02._.js:153:394)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    |                                     ^
+  7 | {
+  digest: '4002205756'
+}
+ POST /admin/inventario/unidades 500 in 464ms (next.js: 3ms, application-code: 461ms)
+[browser] ⨯ unhandledRejection: Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabaseClient.ts:6:37)
+    at module evaluation (src/actions/inventario.ts:3:1)
+    at module evaluation (.next-internal/server/app/admin/inventario/unidades/page/actions.js (server actions loader):1:1)
+    at module evaluation (about://React/Server/file:///app/.next/dev/server/chunks/ssr/_10z.j02._.js?13:153:394)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    |                                     ^
+  7 |
+[browser] ⨯ unhandledRejection: Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabaseClient.ts:6:37)
+    at module evaluation (src/actions/inventario.ts:3:1)
+    at module evaluation (.next-internal/server/app/admin/inventario/unidades/page/actions.js (server actions loader):1:1)
+    at module evaluation (about://React/Server/file:///app/.next/dev/server/chunks/ssr/_10z.j02._.js?13:153:394)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    |                                     ^
+  7 |

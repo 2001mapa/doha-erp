@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Loader2, CheckCircle2 } from "lucide-react";
-import { getBodegas, getProductos, ProductoFiltros } from "@/src/actions/inventario";
+import { Search, Loader2, CheckCircle2, Plus, X } from "lucide-react";
+import { getBodegas, getProductos, createProducto, ProductoFiltros } from "@/src/actions/inventario";
 import type { Bodega, Producto } from "@/src/types/database.types";
 
 type ViewMode = "consulta" | "reporte";
@@ -27,6 +27,20 @@ export default function UnidadesPage() {
   // States for "Reporte"
   const [isGenerating, setIsGenerating] = useState(false);
   const [reportGenerated, setReportGenerated] = useState(false);
+
+  // States for "Nuevo Producto" Modal
+  const [showNewProductModal, setShowNewProductModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [newProductData, setNewProductData] = useState({
+    codigo: "",
+    ref_fabrica: "",
+    descripcion: "",
+    presentacion: "Unidad",
+    bodega_id: "",
+    saldo_actual: 0,
+    costo: 0,
+  });
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   // --- Effects ---
   useEffect(() => {
@@ -65,6 +79,39 @@ export default function UnidadesPage() {
     }
   };
 
+  const handleCreateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    try {
+      const { data, error } = await createProducto(newProductData);
+      if (error) {
+        alert("Error creando producto: " + (error.message || "Error desconocido"));
+      } else if (data) {
+        setShowNewProductModal(false);
+        setNewProductData({
+          codigo: "",
+          ref_fabrica: "",
+          descripcion: "",
+          presentacion: "Unidad",
+          bodega_id: "",
+          saldo_actual: 0,
+          costo: 0,
+        });
+
+        setShowSuccessToast(true);
+        setTimeout(() => setShowSuccessToast(false), 3000);
+
+        // Refresh products list automatically
+        await handleSearch();
+      }
+    } catch {
+      alert("Error inesperado creando producto");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleGenerateReport = () => {
     setIsGenerating(true);
     setReportGenerated(false);
@@ -100,13 +147,37 @@ export default function UnidadesPage() {
               ? "Consulta de Unidades"
               : "Reporte Comercial/Contabilidad"}
           </h1>
-          <button
-            onClick={handleToggleView}
-            className="bg-[#472825] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors"
-          >
-            {viewMode === "consulta" ? "Ver Reporte Contabilidad" : "Volver a Consulta"}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowNewProductModal(true)}
+              className="flex items-center gap-2 bg-[#D3AB80] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              Nuevo Producto
+            </button>
+            <button
+              onClick={handleToggleView}
+              className="bg-[#472825] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors"
+            >
+              {viewMode === "consulta" ? "Ver Reporte Contabilidad" : "Volver a Consulta"}
+            </button>
+          </div>
         </div>
+
+        {/* Success Toast */}
+        <AnimatePresence>
+          {showSuccessToast && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="fixed top-4 right-4 z-50 bg-green-50 text-green-800 p-4 rounded-md border border-green-200 shadow-md flex items-center gap-3"
+            >
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              <span>Producto creado exitosamente.</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Content Area with Animation */}
         <AnimatePresence mode="wait">
@@ -358,6 +429,135 @@ export default function UnidadesPage() {
                 )}
               </AnimatePresence>
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Nuevo Producto Modal */}
+        <AnimatePresence>
+          {showNewProductModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white rounded-lg shadow-xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]"
+              >
+                {/* Modal Header */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                  <h2 className="text-xl font-bold text-[#472825]">Nuevo Producto</h2>
+                  <button
+                    onClick={() => setShowNewProductModal(false)}
+                    className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Modal Body */}
+                <div className="p-6 overflow-y-auto">
+                  <form id="newProductForm" onSubmit={handleCreateProduct} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Código</label>
+                      <input
+                        type="text"
+                        required
+                        className="w-full border border-gray-300 rounded-md p-2 focus:ring-[#D3AB80] focus:border-[#D3AB80]"
+                        placeholder="Ej. CD-18K"
+                        value={newProductData.codigo}
+                        onChange={(e) => setNewProductData({ ...newProductData, codigo: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Ref Fábrica</label>
+                      <input
+                        type="text"
+                        className="w-full border border-gray-300 rounded-md p-2 focus:ring-[#D3AB80] focus:border-[#D3AB80]"
+                        value={newProductData.ref_fabrica}
+                        onChange={(e) => setNewProductData({ ...newProductData, ref_fabrica: e.target.value })}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium mb-1">Descripción</label>
+                      <input
+                        type="text"
+                        required
+                        className="w-full border border-gray-300 rounded-md p-2 focus:ring-[#D3AB80] focus:border-[#D3AB80]"
+                        value={newProductData.descripcion}
+                        onChange={(e) => setNewProductData({ ...newProductData, descripcion: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Presentación</label>
+                      <select
+                        className="w-full border border-gray-300 rounded-md p-2 focus:ring-[#D3AB80] focus:border-[#D3AB80]"
+                        value={newProductData.presentacion}
+                        onChange={(e) => setNewProductData({ ...newProductData, presentacion: e.target.value })}
+                      >
+                        <option value="Unidad">Unidad</option>
+                        <option value="Paca">Paca</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Bodega</label>
+                      <select
+                        required
+                        className="w-full border border-gray-300 rounded-md p-2 focus:ring-[#D3AB80] focus:border-[#D3AB80]"
+                        value={newProductData.bodega_id}
+                        onChange={(e) => setNewProductData({ ...newProductData, bodega_id: e.target.value })}
+                      >
+                        <option value="">Seleccione bodega...</option>
+                        {bodegas.map((b) => (
+                          <option key={b.id} value={b.id}>{b.nombre}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Saldo Actual</label>
+                      <input
+                        type="number"
+                        min="0"
+                        required
+                        className="w-full border border-gray-300 rounded-md p-2 focus:ring-[#D3AB80] focus:border-[#D3AB80]"
+                        value={newProductData.saldo_actual}
+                        onChange={(e) => setNewProductData({ ...newProductData, saldo_actual: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Costo</label>
+                      <input
+                        type="number"
+                        min="0"
+                        required
+                        className="w-full border border-gray-300 rounded-md p-2 focus:ring-[#D3AB80] focus:border-[#D3AB80]"
+                        value={newProductData.costo}
+                        onChange={(e) => setNewProductData({ ...newProductData, costo: Number(e.target.value) })}
+                      />
+                    </div>
+                  </form>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-gray-50">
+                  <button
+                    type="button"
+                    onClick={() => setShowNewProductModal(false)}
+                    className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors font-medium"
+                    disabled={isSaving}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    form="newProductForm"
+                    disabled={isSaving}
+                    className="flex items-center gap-2 bg-[#D3AB80] text-white px-6 py-2 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-50 font-medium"
+                  >
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    Guardar
+                  </button>
+                </div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
       </div>

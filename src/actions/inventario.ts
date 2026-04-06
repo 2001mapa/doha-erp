@@ -23,6 +23,27 @@ export async function getBodegas(): Promise<{ data: Bodega[] | null; error: any 
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createProducto(data: Omit<Producto, 'id' | 'estado' | 'created_at'>): Promise<{ data: Producto | null; error: any }> {
+  try {
+    const { data: result, error } = await supabase
+      .from('productos')
+      .insert([data])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error in createProducto:', { message: error.message, details: error.details, hint: error.hint });
+      return { data: null, error };
+    }
+
+    return { data: result, error: null };
+  } catch (err) {
+    console.error('Unexpected error in createProducto:', err);
+    return { data: null, error: err };
+  }
+}
+
 export interface ProductoFiltros {
   ref_fabrica?: string;
   descripcion?: string;

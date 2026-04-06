@@ -29,14 +29,18 @@ export async function createFacturaCompleta(
     const facturaId = facturaData.id;
 
     // 2. Map and Insert Detalles
-    const detallesToInsert = arrayDetalles.map((detalle) => ({
-      ...detalle,
-      factura_id: facturaId,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const detallesLimpios = arrayDetalles.map((detalle: any) => ({
+      factura_id: facturaId, // El ID de la factura recién creada
+      producto_id: detalle.producto_id || detalle.id, // Asegurar que sea el UUID del producto
+      cantidad: Number(detalle.cantidad),
+      precio_unitario: Number(detalle.precio_unitario || detalle.precio)
     }));
 
     const { error: detallesError } = await supabase
       .from("detalles_factura")
-      .insert(detallesToInsert);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .insert(detallesLimpios as any);
 
     if (detallesError) {
       console.error("Error inserting detalles:", detallesError.message, detallesError.details, detallesError.hint);

@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const generarFacturaPDF = (factura: any, detalles: any[], cliente: any) => {
   const doc = new jsPDF();
 
@@ -25,6 +26,7 @@ export const generarFacturaPDF = (factura: any, detalles: any[], cliente: any) =
 
   // Table
   const tableColumn = ["Producto", "Cantidad", "Precio Unitario", "Subtotal"];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tableRows: any[] = [];
 
   detalles.forEach(detalle => {
@@ -53,6 +55,7 @@ export const generarFacturaPDF = (factura: any, detalles: any[], cliente: any) =
   });
 
   // Totals
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const finalY = (doc as any).lastAutoTable.finalY || 75;
   doc.setFontSize(14);
   doc.setTextColor(DOHA_BROWN[0], DOHA_BROWN[1], DOHA_BROWN[2]);

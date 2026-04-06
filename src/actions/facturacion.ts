@@ -81,3 +81,29 @@ export async function createFacturaCompleta(
     return { success: false, error: "Error inesperado al crear la factura" };
   }
 }
+
+export async function getDetallesFactura(facturaId: string) {
+  try {
+    const { data, error } = await supabase
+      .from("detalles_factura")
+      .select(`
+        *,
+        productos (
+          descripcion,
+          ref_fabrica
+        )
+      `)
+      .eq("factura_id", facturaId);
+
+    if (error) {
+      console.error("Error fetching detalles:", error.message, error.details, error.hint);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
+    console.error("Unexpected error in getDetallesFactura:", err);
+    return { success: false, error: "Error inesperado al obtener los detalles de la factura" };
+  }
+}

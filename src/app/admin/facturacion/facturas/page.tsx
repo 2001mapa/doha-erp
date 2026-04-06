@@ -38,6 +38,8 @@ export default function FacturasPage() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [tipoDocumentoSeleccionado, setTipoDocumentoSeleccionado] = useState("REM");
 
   // State for mock data
   const [facturas, setFacturas] = useState<Factura[]>([
@@ -99,17 +101,22 @@ export default function FacturasPage() {
     setFacturas(facturas.filter((f) => f.id !== id));
   };
 
-  const handleSaveNuevaFactura = async () => {
+  const handleSaveNuevaFactura = () => {
+    setShowNewModal(false);
+    setShowCreateForm(true);
+  };
+
+  const handleEmitirFactura = async () => {
     setIsSaving(true);
     try {
-      // Mocking selected client and details data
+      // Mocking selected client and details data from a "shopping cart" or form
       const clienteMock = {
         nombre: "CLIENTE VIP 1",
         nit: "900.123.456-7"
       };
 
       const facturaMockPayload = {
-        documento: `FV-${Math.floor(Math.random() * 10000)}`,
+        documento: `${tipoDocumentoSeleccionado}-${Math.floor(Math.random() * 10000)}`,
         fecha: new Date().toLocaleDateString(),
         valor_bruto: 1200000,
         impuesto: 228000,
@@ -147,7 +154,7 @@ export default function FacturasPage() {
           entregado: "NO",
         };
         setFacturas([newFactura, ...facturas]);
-        setShowNewModal(false);
+        setShowCreateForm(false);
       } else {
         alert("Error al guardar: " + res.error);
       }
@@ -414,7 +421,11 @@ export default function FacturasPage() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Tipo de Documento
                 </label>
-                <select className="w-full border border-gray-300 rounded p-3 focus:outline-none focus:ring-2 focus:ring-[#D3AB80]">
+                <select
+                  className="w-full border border-gray-300 rounded p-3 focus:outline-none focus:ring-2 focus:ring-[#D3AB80]"
+                  value={tipoDocumentoSeleccionado}
+                  onChange={(e) => setTipoDocumentoSeleccionado(e.target.value)}
+                >
                   <option value="REM">REM - REMISION</option>
                   <option value="FC">FC - FACTURA</option>
                 </select>
@@ -433,6 +444,130 @@ export default function FacturasPage() {
                   className="px-4 py-2 bg-[#D3AB80] hover:bg-[#c29b70] text-white rounded font-bold transition-colors disabled:opacity-50"
                 >
                   {isSaving ? "Guardando..." : "Aceptar"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Formulario Principal de Creación de Factura */}
+      <AnimatePresence>
+        {showCreateForm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          >
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              className="bg-white rounded-xl shadow-xl w-full max-w-6xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 border-b bg-gray-50 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-[#472825]">
+                  Nueva Factura / Remisión ({tipoDocumentoSeleccionado})
+                </h2>
+                <button
+                  onClick={() => setShowCreateForm(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto bg-[#fdfbf9] flex-1">
+                {/* 1. Selección de Cliente */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                  <h3 className="text-lg font-bold text-[#472825] mb-4">Información del Cliente</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">Nombre</label>
+                      <input
+                        type="text"
+                        value="CLIENTE VIP 1"
+                        readOnly
+                        className="w-full border border-gray-300 rounded p-2 text-sm bg-gray-50 cursor-not-allowed"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">NIT / Cédula</label>
+                      <input
+                        type="text"
+                        value="900.123.456-7"
+                        readOnly
+                        className="w-full border border-gray-300 rounded p-2 text-sm bg-gray-50 cursor-not-allowed"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Detalles / Productos */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+                  <div className="p-4 border-b bg-gray-50">
+                    <h3 className="text-lg font-bold text-[#472825]">Detalle de Productos</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                      <thead className="bg-gray-100 text-gray-600 font-semibold border-b">
+                        <tr>
+                          <th className="p-4">Producto</th>
+                          <th className="p-4 text-center">Cantidad</th>
+                          <th className="p-4 text-right">Precio Unitario</th>
+                          <th className="p-4 text-right">Subtotal</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        <tr className="hover:bg-gray-50">
+                          <td className="p-4 font-medium">Anillo de Oro 18k</td>
+                          <td className="p-4 text-center">1</td>
+                          <td className="p-4 text-right">$1,200,000</td>
+                          <td className="p-4 text-right font-bold">$1,200,000</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* 3. Totales */}
+                <div className="flex justify-end">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 w-full max-w-sm">
+                    <h3 className="text-lg font-bold text-[#472825] mb-4">Totales</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500 font-medium">Valor Bruto:</span>
+                        <span className="font-semibold text-gray-800">$1,200,000</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500 font-medium">Impuestos:</span>
+                        <span className="font-semibold text-gray-800">$228,000</span>
+                      </div>
+                      <div className="pt-2 mt-2 border-t flex justify-between text-base">
+                        <span className="text-gray-900 font-bold">Total:</span>
+                        <span className="font-bold text-[#D3AB80]">$1,428,000</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Acciones */}
+              <div className="p-4 border-t bg-white flex justify-between items-center">
+                <button
+                  onClick={() => setShowCreateForm(false)}
+                  disabled={isSaving}
+                  className="px-6 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded font-bold transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleEmitirFactura}
+                  disabled={isSaving}
+                  className="px-6 py-2 bg-[#D3AB80] hover:bg-[#c29b70] text-white rounded font-bold transition-colors disabled:opacity-50 flex items-center"
+                >
+                  {isSaving ? "Guardando..." : "Emitir / Guardar Factura"}
                 </button>
               </div>
             </motion.div>

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Plus, Settings, FileSpreadsheet, Search, Download, Trash2, Edit, FileText } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { createFacturaCompleta } from "@/src/actions/facturacion";
+import { createFacturaCompleta, getDetallesFactura } from "@/src/actions/facturacion";
 import { getProductos } from "@/src/actions/inventario";
 import type { Producto } from "@/src/types/database.types";
 import { generarFacturaPDF } from "@/src/utils/exportPdf";
@@ -42,6 +42,10 @@ export default function FacturasPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [tipoDocumentoSeleccionado, setTipoDocumentoSeleccionado] = useState("REM");
+
+  // Filtros de búsqueda
+  const [filtroNumFactura, setFiltroNumFactura] = useState("");
+  const [filtroCliente, setFiltroCliente] = useState("");
 
   // State for real products and cart
   const [productosBD, setProductosBD] = useState<Producto[]>([]);
@@ -157,9 +161,50 @@ export default function FacturasPage() {
     },
   ]);
 
+  const facturasFiltradas = facturas.filter((f) => {
+    const matchNumFactura = f.documento.toLowerCase().includes(filtroNumFactura.toLowerCase());
+    const matchCliente = f.tercero.toLowerCase().includes(filtroCliente.toLowerCase()) || f.nit.toLowerCase().includes(filtroCliente.toLowerCase());
+    return matchNumFactura && matchCliente;
+  });
+
   // Handlers for deleting rows
   const handleDeleteFactura = (id: string) => {
     setFacturas(facturas.filter((f) => f.id !== id));
+  };
+
+  // Handler for Exporting PDF
+  const handleExportPDF = async (f: Factura) => {
+    const cliente = { nombre: f.tercero, nit: f.nit };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let detallesExport: any[] = [];
+
+    // Validamos si es un ID falso (ej. 1, 2) o un UUID real de Supabase.
+    // Si tiene menos de 10 caracteres, asumimos que es mock.
+    if (f.id.length < 10) {
+      detallesExport = [
+        { nombre: "Producto 1", cantidad: 1, precio_unitario: f.valorBruto, subtotal: f.valorBruto }
+      ];
+    } else {
+      // Intentamos traer los detalles de la BD
+      const res = await getDetallesFactura(f.id);
+      if (res.success && res.data) {
+        detallesExport = res.data.map((d: any) => ({
+          nombre: d.productos?.descripcion || "Producto Desconocido",
+          cantidad: d.cantidad,
+          precio_unitario: d.precio_unitario,
+          subtotal: d.cantidad * d.precio_unitario // o d.subtotal si existiera
+        }));
+      }
+
+      // Si por alguna razón no hay detalles en BD (o falló), ponemos algo genérico para que no quede vacío
+      if (detallesExport.length === 0) {
+        detallesExport = [
+          { nombre: "Producto Vario", cantidad: 1, precio_unitario: f.valorBruto, subtotal: f.valorBruto }
+        ];
+      }
+    }
+
+    generarFacturaPDF(f, detallesExport, cliente);
   };
 
   const handleSaveNuevaFactura = () => {
@@ -297,6 +342,8 @@ export default function FacturasPage() {
             </label>
             <input
               type="text"
+              value={filtroNumFactura}
+              onChange={(e) => setFiltroNumFactura(e.target.value)}
               placeholder="Ej. 1020"
               className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#D3AB80]"
             />
@@ -307,6 +354,8 @@ export default function FacturasPage() {
             </label>
             <input
               type="text"
+              value={filtroCliente}
+              onChange={(e) => setFiltroCliente(e.target.value)}
               placeholder="Nombre o NIT"
               className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#D3AB80]"
             />
@@ -390,14 +439,14 @@ export default function FacturasPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {facturas.length === 0 ? (
+              {facturasFiltradas.length === 0 ? (
                 <tr>
                   <td colSpan={13} className="p-8 text-center text-gray-500">
-                    No hay facturas para mostrar.
+                    No hay facturas para mostrar que coincidan con la búsqueda.
                   </td>
                 </tr>
               ) : (
-                facturas.map((f) => (
+                facturasFiltradas.map((f) => (
                   <tr key={f.id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4 flex space-x-2">
                       <button className="text-gray-400 hover:text-[#D3AB80] transition-colors" title="Editar">
@@ -411,14 +460,7 @@ export default function FacturasPage() {
                         <Trash2 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => {
-                          const cliente = { nombre: f.tercero, nit: f.nit };
-                          // Mocking details for the PDF export based on the row
-                          const detalles = [
-                            { nombre: "Producto 1", cantidad: 1, precio_unitario: f.valorBruto, subtotal: f.valorBruto }
-                          ];
-                          generarFacturaPDF(f, detalles, cliente);
-                        }}
+                        onClick={() => handleExportPDF(f)}
                         className="text-blue-500 hover:text-blue-600 transition-colors"
                         title="Descargar PDF"
                       >

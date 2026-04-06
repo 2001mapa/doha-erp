@@ -3,28 +3,12 @@
 import React, { useState } from "react";
 import { Plus, Settings, FileSpreadsheet, Search, Download, Trash2, Edit, FileText } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { createFacturaCompleta, getDetallesFactura } from "@/src/actions/facturacion";
+import { createFacturaCompleta, getDetallesFactura, getFacturas } from "@/src/actions/facturacion";
 import { getProductos } from "@/src/actions/inventario";
 import type { Producto } from "@/src/types/database.types";
 import { generarFacturaPDF } from "@/src/utils/exportPdf";
 
 // Mock Data Interfaces
-interface Factura {
-  id: string;
-  documento: string;
-  fecha: string;
-  nit: string;
-  tercero: string;
-  vendedor: string;
-  ciudad: string;
-  valorBruto: number;
-  impuesto: number;
-  total: number;
-  estado: string;
-  detalles: string;
-  entregado: string;
-}
-
 interface UserConfig {
   id: string;
   usuario: string;
@@ -46,6 +30,10 @@ export default function FacturasPage() {
   // Filtros de búsqueda
   const [filtroNumFactura, setFiltroNumFactura] = useState("");
   const [filtroCliente, setFiltroCliente] = useState("");
+
+  // Real Data from Supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [facturasBD, setFacturasBD] = useState<any[]>([]);
 
   // State for real products and cart
   const [productosBD, setProductosBD] = useState<Producto[]>([]);
@@ -105,40 +93,16 @@ export default function FacturasPage() {
     return { valorBruto, impuesto, total };
   };
 
+  React.useEffect(() => {
+    async function loadFacturas() {
+      const res = await getFacturas();
+      if (res.success && res.data) {
+        setFacturasBD(res.data);
+      }
+    }
+    loadFacturas();
+  }, []);
 
-  // State for mock data
-  const [facturas, setFacturas] = useState<Factura[]>([
-    {
-      id: "1",
-      documento: "FV-1020",
-      fecha: "04/04/2026",
-      nit: "900.123.456-7",
-      tercero: "CLIENTE VIP 1",
-      vendedor: "Vendedor A",
-      ciudad: "Medellín",
-      valorBruto: 1200000,
-      impuesto: 228000,
-      total: 1428000,
-      estado: "Pagada",
-      detalles: "Ver",
-      entregado: "SI",
-    },
-    {
-      id: "2",
-      documento: "FV-1021",
-      fecha: "05/04/2026",
-      nit: "800.987.654-3",
-      tercero: "JUAN PEREZ",
-      vendedor: "Vendedor B",
-      ciudad: "Bogotá",
-      valorBruto: 500000,
-      impuesto: 95000,
-      total: 595000,
-      estado: "Pendiente",
-      detalles: "Ver",
-      entregado: "NO",
-    },
-  ]);
 
   const [userConfigs] = useState<UserConfig[]>([
     {
@@ -161,50 +125,50 @@ export default function FacturasPage() {
     },
   ]);
 
-  const facturasFiltradas = facturas.filter((f) => {
-    const matchNumFactura = f.documento.toLowerCase().includes(filtroNumFactura.toLowerCase());
-    const matchCliente = f.tercero.toLowerCase().includes(filtroCliente.toLowerCase()) || f.nit.toLowerCase().includes(filtroCliente.toLowerCase());
+  const facturasFiltradas = facturasBD.filter((f) => {
+    const matchNumFactura = (f.documento || f.numero_factura || "").toLowerCase().includes(filtroNumFactura.toLowerCase());
+    const matchCliente = (f.terceros?.nombre || "").toLowerCase().includes(filtroCliente.toLowerCase()) || (f.terceros?.nit || "").toLowerCase().includes(filtroCliente.toLowerCase());
     return matchNumFactura && matchCliente;
   });
 
   // Handlers for deleting rows
   const handleDeleteFactura = (id: string) => {
-    setFacturas(facturas.filter((f) => f.id !== id));
+    setFacturasBD(facturasBD.filter((f) => f.id !== id));
   };
 
+  // Optional state for PDF generation
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState<string | null>(null);
+
   // Handler for Exporting PDF
-  const handleExportPDF = async (f: Factura) => {
-    const cliente = { nombre: f.tercero, nit: f.nit };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleExportPDF = async (f: any) => {
+    setIsGeneratingPDF(f.id);
+    const cliente = f.terceros ? { nombre: f.terceros.nombre, nit: f.terceros.nit } : { nombre: 'Consumidor Final', nit: 'N/A' };
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let detallesExport: any[] = [];
 
-    // Validamos si es un ID falso (ej. 1, 2) o un UUID real de Supabase.
-    // Si tiene menos de 10 caracteres, asumimos que es mock.
-    if (f.id.length < 10) {
-      detallesExport = [
-        { nombre: "Producto 1", cantidad: 1, precio_unitario: f.valorBruto, subtotal: f.valorBruto }
-      ];
-    } else {
-      // Intentamos traer los detalles de la BD
-      const res = await getDetallesFactura(f.id);
-      if (res.success && res.data) {
-        detallesExport = res.data.map((d: any) => ({
-          nombre: d.productos?.descripcion || "Producto Desconocido",
-          cantidad: d.cantidad,
-          precio_unitario: d.precio_unitario,
-          subtotal: d.cantidad * d.precio_unitario // o d.subtotal si existiera
-        }));
-      }
+    // Traer los detalles de la BD
+    const res = await getDetallesFactura(f.id);
+    if (res.success && res.data) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      detallesExport = res.data.map((d: any) => ({
+        nombre: d.productos?.descripcion || "Producto Desconocido",
+        cantidad: d.cantidad,
+        precio_unitario: d.precio_unitario,
+        subtotal: d.cantidad * d.precio_unitario // o d.subtotal si existiera
+      }));
+    }
 
-      // Si por alguna razón no hay detalles en BD (o falló), ponemos algo genérico para que no quede vacío
-      if (detallesExport.length === 0) {
-        detallesExport = [
-          { nombre: "Producto Vario", cantidad: 1, precio_unitario: f.valorBruto, subtotal: f.valorBruto }
-        ];
-      }
+    // Si por alguna razón no hay detalles en BD, ponemos algo genérico para que no falle feo el PDF
+    if (detallesExport.length === 0) {
+      detallesExport = [
+        { nombre: "Producto Vario / Sin detalle", cantidad: 1, precio_unitario: f.valor_bruto || 0, subtotal: f.valor_bruto || 0 }
+      ];
     }
 
     generarFacturaPDF(f, detallesExport, cliente);
+    setIsGeneratingPDF(null);
   };
 
   const handleSaveNuevaFactura = () => {
@@ -243,22 +207,23 @@ export default function FacturasPage() {
 
       if (res.success) {
         // Add to local state to reflect UI changes immediately
-        const newFactura: Factura = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const newFactura: any = {
           id: res.facturaId || Math.random().toString(),
           documento: facturaMockPayload.documento,
+          numero_factura: facturaMockPayload.documento,
           fecha: facturaMockPayload.fecha,
-          nit: clienteMock.nit,
-          tercero: clienteMock.nombre,
-          vendedor: "Vendedor Actual",
-          ciudad: "Ciudad Actual",
-          valorBruto: facturaMockPayload.valor_bruto,
+          terceros: {
+            nombre: clienteMock.nombre,
+            nit: clienteMock.nit
+          },
+          valor_bruto: facturaMockPayload.valor_bruto,
           impuesto: facturaMockPayload.impuesto,
           total: facturaMockPayload.total,
           estado: facturaMockPayload.estado,
-          detalles: "Ver",
-          entregado: "NO",
+          created_at: new Date().toISOString()
         };
-        setFacturas([newFactura, ...facturas]);
+        setFacturasBD([newFactura, ...facturasBD]);
         setShowCreateForm(false);
       } else {
         alert("Error al guardar: " + res.error);
@@ -442,7 +407,7 @@ export default function FacturasPage() {
               {facturasFiltradas.length === 0 ? (
                 <tr>
                   <td colSpan={13} className="p-8 text-center text-gray-500">
-                    No hay facturas para mostrar que coincidan con la búsqueda.
+                    No hay facturas registradas.
                   </td>
                 </tr>
               ) : (
@@ -461,22 +426,23 @@ export default function FacturasPage() {
                       </button>
                       <button
                         onClick={() => handleExportPDF(f)}
-                        className="text-blue-500 hover:text-blue-600 transition-colors"
-                        title="Descargar PDF"
+                        disabled={isGeneratingPDF === f.id}
+                        className={`transition-colors ${isGeneratingPDF === f.id ? 'text-gray-400 cursor-not-allowed' : 'text-blue-500 hover:text-blue-600'}`}
+                        title={isGeneratingPDF === f.id ? "Generando..." : "Descargar PDF"}
                       >
-                        <FileText className="w-4 h-4" />
+                        {isGeneratingPDF === f.id ? <span className="text-xs font-bold">...</span> : <FileText className="w-4 h-4" />}
                       </button>
                     </td>
-                    <td className="p-4 font-medium">{f.documento}</td>
-                    <td className="p-4">{f.fecha}</td>
-                    <td className="p-4">{f.nit}</td>
-                    <td className="p-4">{f.tercero}</td>
-                    <td className="p-4">{f.vendedor}</td>
-                    <td className="p-4">{f.ciudad}</td>
-                    <td className="p-4">${f.valorBruto.toLocaleString()}</td>
-                    <td className="p-4">${f.impuesto.toLocaleString()}</td>
+                    <td className="p-4 font-medium">{f.documento || f.numero_factura || '-'}</td>
+                    <td className="p-4">{f.fecha || new Date(f.created_at).toLocaleDateString()}</td>
+                    <td className="p-4">{f.terceros?.nit || '-'}</td>
+                    <td className="p-4">{f.terceros?.nombre || '-'}</td>
+                    <td className="p-4">{f.vendedor || '-'}</td>
+                    <td className="p-4">{f.ciudad || '-'}</td>
+                    <td className="p-4">${Number(f.valor_bruto || 0).toLocaleString()}</td>
+                    <td className="p-4">${Number(f.impuesto || 0).toLocaleString()}</td>
                     <td className="p-4 font-bold text-gray-900">
-                      ${f.total.toLocaleString()}
+                      ${Number(f.total || 0).toLocaleString()}
                     </td>
                     <td className="p-4">
                       <span
@@ -486,13 +452,13 @@ export default function FacturasPage() {
                             : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
-                        {f.estado}
+                        {f.estado || 'Pendiente'}
                       </span>
                     </td>
                     <td className="p-4 text-blue-600 cursor-pointer hover:underline">
-                      {f.detalles}
+                      Ver
                     </td>
-                    <td className="p-4">{f.entregado}</td>
+                    <td className="p-4">{f.entregado || 'NO'}</td>
                   </tr>
                 ))
               )}

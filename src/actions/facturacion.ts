@@ -82,6 +82,32 @@ export async function createFacturaCompleta(
   }
 }
 
+export async function getFacturas() {
+  try {
+    const { data, error } = await supabase
+      .from("facturas")
+      .select(`
+        *,
+        terceros (
+          nombre,
+          nit
+        )
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching facturas:", error.message, error.details, error.hint);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
+    console.error("Unexpected error in getFacturas:", err);
+    return { success: false, error: "Error inesperado al obtener las facturas" };
+  }
+}
+
 export async function getDetallesFactura(facturaId: string) {
   try {
     const { data, error } = await supabase

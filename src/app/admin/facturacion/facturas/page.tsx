@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { Plus, Settings, FileSpreadsheet, Search, Download, Trash2, Edit, FileText } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { createFacturaCompleta } from "@/src/actions/facturacion";
+import { getProductos } from "@/src/actions/inventario";
+import type { Producto } from "@/src/types/database.types";
 import { generarFacturaPDF } from "@/src/utils/exportPdf";
 
 // Mock Data Interfaces
@@ -40,6 +42,65 @@ export default function FacturasPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [tipoDocumentoSeleccionado, setTipoDocumentoSeleccionado] = useState("REM");
+
+  // State for real products and cart
+  const [productosBD, setProductosBD] = useState<Producto[]>([]);
+  const [busquedaProducto, setBusquedaProducto] = useState("");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [carritoDetalles, setCarritoDetalles] = useState<any[]>([]);
+
+  // Fetch products on mount
+  React.useEffect(() => {
+    async function loadProducts() {
+      const res = await getProductos();
+      if (res.data) {
+        setProductosBD(res.data);
+      }
+    }
+    loadProducts();
+  }, []);
+
+  const productosFiltrados = productosBD.filter(p =>
+    p.descripcion?.toLowerCase().includes(busquedaProducto.toLowerCase()) ||
+    p.ref_fabrica?.toLowerCase().includes(busquedaProducto.toLowerCase())
+  );
+
+  const agregarAlCarrito = (producto: Producto) => {
+    const existe = carritoDetalles.find(item => item.producto_id === producto.id);
+    if (existe) {
+      setCarritoDetalles(
+        carritoDetalles.map(item =>
+          item.producto_id === producto.id
+            ? { ...item, cantidad: item.cantidad + 1, subtotal: (item.cantidad + 1) * item.precio_unitario }
+            : item
+        )
+      );
+    } else {
+      setCarritoDetalles([
+        ...carritoDetalles,
+        {
+          producto_id: producto.id,
+          nombre: producto.descripcion || "Producto sin nombre",
+          cantidad: 1,
+          precio_unitario: Number(producto.costo || 0),
+          subtotal: Number(producto.costo || 0)
+        }
+      ]);
+    }
+    setBusquedaProducto("");
+  };
+
+  const eliminarDelCarrito = (producto_id: string) => {
+    setCarritoDetalles(carritoDetalles.filter(item => item.producto_id !== producto_id));
+  };
+
+  const calcularTotales = () => {
+    const valorBruto = carritoDetalles.reduce((acc, item) => acc + item.subtotal, 0);
+    const impuesto = valorBruto * 0.19; // Mocking 19% IVA, adjust if needed
+    const total = valorBruto + impuesto;
+    return { valorBruto, impuesto, total };
+  };
+
 
   // State for mock data
   const [facturas, setFacturas] = useState<Factura[]>([
@@ -115,26 +176,25 @@ export default function FacturasPage() {
         nit: "900.123.456-7"
       };
 
+
+
+      if (carritoDetalles.length === 0) {
+        alert("El carrito está vacío. Agregue productos.");
+        setIsSaving(false);
+        return;
+      }
+
+      const totales = calcularTotales();
       const facturaMockPayload = {
         documento: `${tipoDocumentoSeleccionado}-${Math.floor(Math.random() * 10000)}`,
         fecha: new Date().toLocaleDateString(),
-        valor_bruto: 1200000,
-        impuesto: 228000,
-        total: 1428000,
+        valor_bruto: totales.valorBruto,
+        impuesto: totales.impuesto,
+        total: totales.total,
         estado: "Pendiente"
       };
 
-      const detallesMockPayload = [
-        {
-          producto_id: "00000000-0000-0000-0000-000000000000", // Would be actual UUID in prod
-          cantidad: 1,
-          precio_unitario: 1200000,
-          subtotal: 1200000,
-          nombre: "Anillo de Oro 18k"
-        }
-      ];
-
-      const res = await createFacturaCompleta(facturaMockPayload, detallesMockPayload);
+      const res = await createFacturaCompleta(facturaMockPayload, carritoDetalles);
 
       if (res.success) {
         // Add to local state to reflect UI changes immediately
@@ -504,7 +564,39 @@ export default function FacturasPage() {
                   </div>
                 </div>
 
-                {/* 2. Detalles / Productos */}
+                {/* 2. Selector de Productos */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                  <h3 className="text-lg font-bold text-[#472825] mb-4">Agregar Productos</h3>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Buscar producto por nombre o referencia..."
+                      value={busquedaProducto}
+                      onChange={(e) => setBusquedaProducto(e.target.value)}
+                      className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#D3AB80]"
+                    />
+                    {busquedaProducto && (
+                      <ul className="absolute z-10 w-full bg-white border border-gray-300 mt-1 max-h-48 overflow-y-auto rounded shadow-lg">
+                        {productosFiltrados.length > 0 ? (
+                          productosFiltrados.map((p) => (
+                            <li
+                              key={p.id}
+                              onClick={() => agregarAlCarrito(p)}
+                              className="p-2 hover:bg-gray-100 cursor-pointer text-sm flex justify-between"
+                            >
+                              <span>{p.descripcion} ({p.ref_fabrica})</span>
+                              <span className="font-semibold">${Number(p.costo || 0).toLocaleString()}</span>
+                            </li>
+                          ))
+                        ) : (
+                          <li className="p-2 text-sm text-gray-500">No se encontraron productos</li>
+                        )}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+
+                {/* 3. Detalles / Productos */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
                   <div className="p-4 border-b bg-gray-50">
                     <h3 className="text-lg font-bold text-[#472825]">Detalle de Productos</h3>
@@ -517,36 +609,54 @@ export default function FacturasPage() {
                           <th className="p-4 text-center">Cantidad</th>
                           <th className="p-4 text-right">Precio Unitario</th>
                           <th className="p-4 text-right">Subtotal</th>
+                          <th className="p-4 text-center">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        <tr className="hover:bg-gray-50">
-                          <td className="p-4 font-medium">Anillo de Oro 18k</td>
-                          <td className="p-4 text-center">1</td>
-                          <td className="p-4 text-right">$1,200,000</td>
-                          <td className="p-4 text-right font-bold">$1,200,000</td>
-                        </tr>
+                        {carritoDetalles.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="p-4 text-center text-gray-500">No hay productos en la factura.</td>
+                          </tr>
+                        ) : (
+                          carritoDetalles.map((item) => (
+                            <tr key={item.producto_id} className="hover:bg-gray-50">
+                              <td className="p-4 font-medium">{item.nombre}</td>
+                              <td className="p-4 text-center">{item.cantidad}</td>
+                              <td className="p-4 text-right">${item.precio_unitario.toLocaleString()}</td>
+                              <td className="p-4 text-right font-bold">${item.subtotal.toLocaleString()}</td>
+                              <td className="p-4 text-center">
+                                <button
+                                  onClick={() => eliminarDelCarrito(item.producto_id)}
+                                  className="text-red-500 hover:text-red-700"
+                                  title="Eliminar"
+                                >
+                                  <Trash2 className="w-4 h-4 mx-auto" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
                 </div>
 
-                {/* 3. Totales */}
+                {/* 4. Totales */}
                 <div className="flex justify-end">
                   <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 w-full max-w-sm">
                     <h3 className="text-lg font-bold text-[#472825] mb-4">Totales</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500 font-medium">Valor Bruto:</span>
-                        <span className="font-semibold text-gray-800">$1,200,000</span>
+                        <span className="font-semibold text-gray-800">${calcularTotales().valorBruto.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 font-medium">Impuestos:</span>
-                        <span className="font-semibold text-gray-800">$228,000</span>
+                        <span className="text-gray-500 font-medium">Impuestos (19%):</span>
+                        <span className="font-semibold text-gray-800">${calcularTotales().impuesto.toLocaleString()}</span>
                       </div>
                       <div className="pt-2 mt-2 border-t flex justify-between text-base">
                         <span className="text-gray-900 font-bold">Total:</span>
-                        <span className="font-bold text-[#D3AB80]">$1,428,000</span>
+                        <span className="font-bold text-[#D3AB80]">${calcularTotales().total.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>

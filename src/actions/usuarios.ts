@@ -22,6 +22,86 @@ export async function getUsuarios() {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function crearRol(datos: any) {
+  try {
+    const payload = {
+      nombre: datos.nombre,
+      descripcion: datos.descripcion,
+    };
+
+    const { data, error } = await supabase
+      .from('roles')
+      .insert([payload])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error in crearRol:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/admin/general/roles');
+    return { success: true, data };
+  } catch (err) {
+    console.error('Exception in crearRol:', err);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return { success: false, error: (err as any).message };
+  }
+}
+
+export async function eliminarRol(id: number) {
+  try {
+    const { error } = await supabase
+      .from('roles')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error in eliminarRol:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+      // Detectar error de clave foránea
+      if (error.code === '23503') {
+        return { success: false, error: 'No se puede eliminar este rol porque tiene usuarios asignados' };
+      }
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/admin/general/roles');
+    return { success: true };
+  } catch (err) {
+    console.error('Exception in eliminarRol:', err);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return { success: false, error: (err as any).message };
+  }
+}
+
+export async function getRolesCompletos() {
+  try {
+    const { data, error } = await supabase
+      .from('roles')
+      .select('*, perfiles(count)');
+
+    if (error) {
+      console.error('Error fetching roles completos:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    console.error('Exception in getRolesCompletos:', err);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return { success: false, error: (err as any).message };
+  }
+}
+
 export async function getRoles() {
   try {
     const { data, error } = await supabase

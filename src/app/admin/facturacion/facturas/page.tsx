@@ -116,7 +116,21 @@ export default function FacturasPage() {
   // Fetch actual user logic
   React.useEffect(() => {
     async function loadUser() {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Modo desarrollo: comentamos supabase.auth.getUser() y mockeamos los datos
+      // const { data: { user } } = await supabase.auth.getUser();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const user: any = {
+        email: "admin@doha.com",
+        user_metadata: {
+          usuario: "admin",
+          precioNivelMin: "NIVEL 1",
+          dcto: true,
+          dctoMax: 100,
+          precioMod: true,
+          facturaDebajoCosto: true
+        }
+      };
+
       if (user) {
         setConfigData({
           usuario: user.user_metadata?.usuario || user.email || "",

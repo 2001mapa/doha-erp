@@ -232,3 +232,45 @@ export async function getDetallesFactura(facturaId: string) {
     return { success: false, error: "Error inesperado al obtener los detalles de la factura" };
   }
 }
+
+export async function updateFacturasPendientes() {
+  try {
+    const { error } = await supabase
+      .from("facturas")
+      .update({ estado: 'EMITIDA' })
+      .in("estado", ["PENDIENTE", "Pendiente"]);
+
+    if (error) {
+      console.error("Error updating facturas pendientes:", error.message, error.details, error.hint);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
+    console.error("Unexpected error in updateFacturasPendientes:", err);
+    return { success: false, error: "Error inesperado al emitir facturas pendientes" };
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function updatePerfilUsuario(datos: any) {
+  try {
+    const { data, error } = await supabase.auth.updateUser({
+      data: datos
+    });
+
+    if (error) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const anyError = error as any;
+      console.error("Error updating user profile:", anyError.message, anyError.details, anyError.hint);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
+    console.error("Unexpected error in updatePerfilUsuario:", err);
+    return { success: false, error: "Error inesperado al actualizar perfil de usuario" };
+  }
+}

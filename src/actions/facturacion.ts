@@ -2,6 +2,7 @@
 
 import { supabase } from "@/src/lib/supabaseClient";
 import { Factura, DetalleFactura } from "@/src/types/database.types";
+import { revalidatePath } from "next/cache";
 
 export async function createFacturaCompleta(
   datosFactura: Omit<Factura, "id" | "created_at">,
@@ -245,6 +246,7 @@ export async function updateFacturasPendientes() {
       return { success: false, error: error.message };
     }
 
+    revalidatePath("/admin/facturacion/facturas");
     return { success: true };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {

@@ -1,0 +1,120 @@
+
+> doha-erp@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 505ms
+
+○ Compiling /admin/login ...
+ GET /admin/login 200 in 3.7s (next.js: 3.3s, application-code: 332ms)
+ GET /admin 200 in 515ms (next.js: 478ms, application-code: 37ms)
+ GET /admin/general/usuarios 200 in 2.5s (next.js: 2.4s, application-code: 90ms)
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabaseClient.ts:6:37)
+    at module evaluation (src/actions/usuarios.ts:3:1)
+    at module evaluation (.next-internal/server/app/admin/general/usuarios/page/actions.js (server actions loader):1:1)
+    at module evaluation (.next/dev/server/chunks/ssr/_0jn4ybn._.js:145:389)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    |                                     ^
+  7 | {
+  digest: '3929191437'
+}
+ POST /admin/general/usuarios 500 in 1225ms (next.js: 4ms, application-code: 1221ms)
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabaseClient.ts:6:37)
+    at module evaluation (src/actions/usuarios.ts:3:1)
+    at module evaluation (.next-internal/server/app/admin/general/usuarios/page/actions.js (server actions loader):1:1)
+    at module evaluation (.next/dev/server/chunks/ssr/_0jn4ybn._.js:145:389)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    |                                     ^
+  7 | {
+  digest: '3929191437'
+}
+ POST /admin/general/usuarios 500 in 539ms (next.js: 15ms, application-code: 524ms)
+ GET /admin/login 200 in 73ms (next.js: 4ms, application-code: 69ms)
+ GET /admin 200 in 30ms (next.js: 3ms, application-code: 26ms)
+ GET /admin/login 200 in 85ms (next.js: 4ms, application-code: 82ms)
+ GET /admin 200 in 32ms (next.js: 5ms, application-code: 27ms)
+ GET /admin/general/usuarios 200 in 157ms (next.js: 4ms, application-code: 153ms)
+ GET /admin/login 200 in 33ms (next.js: 4ms, application-code: 30ms)
+ GET /admin/login 200 in 62ms (next.js: 3ms, application-code: 59ms)
+ GET /admin 200 in 29ms (next.js: 3ms, application-code: 25ms)
+ GET /admin/general/usuarios 200 in 33ms (next.js: 3ms, application-code: 30ms)
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabaseClient.ts:6:37)
+    at module evaluation (src/actions/usuarios.ts:3:1)
+    at module evaluation (.next-internal/server/app/admin/general/usuarios/page/actions.js (server actions loader):1:1)
+    at module evaluation (.next/dev/server/chunks/ssr/_0jn4ybn._.js:145:389)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    |                                     ^
+  7 | {
+  digest: '3929191437'
+}
+ POST /admin/general/usuarios 500 in 564ms (next.js: 3ms, application-code: 561ms)
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabaseClient.ts:6:37)
+    at module evaluation (src/actions/usuarios.ts:3:1)
+    at module evaluation (.next-internal/server/app/admin/general/usuarios/page/actions.js (server actions loader):1:1)
+    at module evaluation (.next/dev/server/chunks/ssr/_0jn4ybn._.js:145:389)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    |                                     ^
+  7 | {
+  digest: '3929191437'
+}
+ POST /admin/general/usuarios 500 in 493ms (next.js: 3ms, application-code: 490ms)
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabaseClient.ts:6:37)
+    at module evaluation (src/actions/usuarios.ts:3:1)
+    at module evaluation (.next-internal/server/app/admin/general/usuarios/page/actions.js (server actions loader):1:1)
+    at module evaluation (.next/dev/server/chunks/ssr/_0jn4ybn._.js:145:389)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    |                                     ^
+  7 | {
+  digest: '3929191437'
+}
+ POST /admin/general/usuarios 500 in 497ms (next.js: 3ms, application-code: 494ms)
+[browser] Error loading data: Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabaseClient.ts:6:37)
+    at module evaluation (src/actions/usuarios.ts:3:1)
+    at module evaluation (.next-internal/server/app/admin/general/usuarios/page/actions.js (server actions loader):1:1)
+    at module evaluation (about://React/Server/file:///app/.next/dev/server/chunks/ssr/_0jn4ybn._.js?13:145:389)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    |                                     ^
+  7 | (src/app/admin/general/usuarios/page.tsx:77:17)
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabaseClient.ts:6:37)
+    at module evaluation (src/actions/usuarios.ts:3:1)
+    at module evaluation (.next-internal/server/app/admin/general/usuarios/page/actions.js (server actions loader):1:1)
+    at module evaluation (.next/dev/server/chunks/ssr/_0jn4ybn._.js:145:389)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    |                                     ^
+  7 | {
+  digest: '3929191437'
+}
+[browser] Error loading data: Error: supabaseUrl is required.
+    at module evaluation (src/lib/supabaseClient.ts:6:37)
+    at module evaluation (src/actions/usuarios.ts:3:1)
+    at module evaluation (.next-internal/server/app/admin/general/usuarios/page/actions.js (server actions loader):1:1)
+    at module evaluation (about://React/Server/file:///app/.next/dev/server/chunks/ssr/_0jn4ybn._.js?13:145:389)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    |                                     ^
+  7 | (src/app/admin/general/usuarios/page.tsx:77:17)
+ POST /admin/general/usuarios 500 in 449ms (next.js: 2ms, application-code: 447ms)

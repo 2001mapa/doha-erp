@@ -29,7 +29,13 @@ export default function UsuariosPage() {
   const [isEditing, setIsEditing] = useState(false);
 
   // Estado para el formulario
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    id: string;
+    nombre: string;
+    email: string;
+    rol_id: number | string;
+    estado: string;
+  }>({
     id: "",
     nombre: "",
     email: "",
@@ -60,6 +66,7 @@ export default function UsuariosPage() {
     let isMounted = true;
     const fetchInitData = async () => {
       try {
+        // Obtener los roles de Supabase para poblar el select
         const [usuariosRes, rolesRes] = await Promise.all([
           getUsuarios(),
           getRoles()
@@ -91,7 +98,7 @@ export default function UsuariosPage() {
       id: "",
       nombre: "",
       email: "",
-      rol_id: roles.length > 0 ? roles[0].id : "",
+      rol_id: "",
       estado: "Activo",
     });
     setIsEditing(false);
@@ -144,7 +151,8 @@ export default function UsuariosPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const value = e.target.name === "rol_id" ? Number(e.target.value) : e.target.value;
+    setFormData({ ...formData, [e.target.name]: value });
   };
 
   // Filtrar lista para la tabla
@@ -423,6 +431,7 @@ export default function UsuariosPage() {
                         className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825] appearance-none"
                       >
                         <option value="" disabled>Selecciona un rol</option>
+                        {/* Mapear roles de Supabase dinámicamente */}
                         {roles.map((rol) => (
                           <option key={rol.id} value={rol.id}>
                             {rol.nombre}

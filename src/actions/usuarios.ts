@@ -44,6 +44,11 @@ export async function getRoles() {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function crearUsuario(datos: any) {
   try {
+    // NOTA DE DESARROLLO: Validaciones de sesión comentadas/eliminadas temporalmente.
+    // Se asume que cualquier petición en este momento es válida para permitir CRUD directo.
+    // const { data: { session } } = await supabase.auth.getSession();
+    // if (!session) throw new Error('Auth session missing!');
+
     const payload = {
       nombre: datos.nombre,
       email: datos.email,

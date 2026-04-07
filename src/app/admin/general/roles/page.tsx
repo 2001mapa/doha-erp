@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   Plus,
@@ -11,44 +11,21 @@ import {
   X,
   AlignLeft,
   Users,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-// --- DATOS ACTUALIZADOS SEGÚN LAS REGLAS DE TU HERMANO ---
-const mockRolesIniciales = [
-  {
-    id: 1,
-    nombre: "Supervisor",
-    descripcion:
-      "Acceso total: utilidad en ventas, contabilidad, balances y auditoría de documentos.",
-    usuariosActivos: 1,
-    estado: "Activo",
-  },
-  {
-    id: 2,
-    nombre: "Administrador",
-    descripcion:
-      "Generar remisiones, recibos de caja, comprobantes de egreso y notas contables.",
-    usuariosActivos: 1,
-    estado: "Activo",
-  },
-  {
-    id: 3,
-    nombre: "Vendedor",
-    descripcion:
-      "Acceso único para generar remisiones. Bloqueo automático de edición post-venta.",
-    usuariosActivos: 3,
-    estado: "Activo",
-  },
-];
+import { getRolesCompletos, crearRol, eliminarRol } from "@/src/actions/usuarios";
 
 export default function RolesPage() {
-  const [roles, setRoles] = useState(mockRolesIniciales);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [roles, setRoles] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("Todos");
+  const [isLoading, setIsLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     id: 0,
@@ -57,6 +34,29 @@ export default function RolesPage() {
     usuariosActivos: 0,
     estado: "Activo",
   });
+
+  const loadRoles = async () => {
+    const response = await getRolesCompletos();
+    if (response.success && response.data) {
+      const mappedRoles = response.data.map((rol) => ({
+        ...rol,
+        usuariosActivos: rol.perfiles?.[0]?.count || 0,
+        estado: 'Activo' // Mantenemos "Activo" por ahora, como se indicó
+      }));
+      setRoles(mappedRoles);
+    } else {
+      console.error('Error cargando roles:', response.error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      setIsLoading(true);
+      await loadRoles();
+      setIsLoading(false);
+    };
+    fetchRoles();
+  }, []);
 
   const handleOpenCreate = () => {
     setFormData({
@@ -77,25 +77,44 @@ export default function RolesPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: number, usuariosActivos: number) => {
+  const handleDelete = async (id: number, usuariosActivos: number) => {
     if (usuariosActivos > 0) {
       alert("No puedes eliminar un rol que tiene usuarios activos asignados.");
       return;
     }
     if (confirm("¿Estás seguro de que deseas eliminar este rol?")) {
-      setRoles(roles.filter((r) => r.id !== id));
+      const response = await eliminarRol(id);
+      if (response.success) {
+        alert("Rol eliminado exitosamente");
+        loadRoles();
+      } else {
+        alert(response.error);
+      }
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     if (isEditing) {
+      // Logic for editing a role can go here. For now, ignoring editing.
       setRoles(roles.map((r) => (r.id === formData.id ? formData : r)));
+      setIsModalOpen(false);
+      setIsSubmitting(false);
     } else {
-      const nuevoRol = { ...formData, id: Date.now(), usuariosActivos: 0 };
-      setRoles([...roles, nuevoRol]);
+      const response = await crearRol(formData);
+      setIsSubmitting(false);
+      if (response.success) {
+        // En una app real usaríamos un toast (ej. react-hot-toast), pero por mantener
+        // la simplicidad y consistencia en este entorno, usamos alert o log.
+        // Simulando un toast con alert por ahora.
+        alert("¡Rol creado exitosamente!");
+        loadRoles();
+        setIsModalOpen(false);
+      } else {
+        alert("Error al crear el rol: " + response.error);
+      }
     }
-    setIsModalOpen(false);
   };
 
   const handleChange = (
@@ -108,8 +127,8 @@ export default function RolesPage() {
 
   const rolesFiltrados = roles.filter((r) => {
     const coincideBusqueda =
-      r.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
+      r.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.descripcion?.toLowerCase().includes(searchTerm.toLowerCase());
     const coincideEstado =
       filtroEstado === "Todos" || r.estado === filtroEstado;
     return coincideBusqueda && coincideEstado;
@@ -191,7 +210,15 @@ export default function RolesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {rolesFiltrados.length > 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center">
+                    <div className="flex justify-center items-center">
+                      <Loader2 className="animate-spin text-[#D3AB80]" size={32} />
+                    </div>
+                  </td>
+                </tr>
+              ) : rolesFiltrados.length > 0 ? (
                 rolesFiltrados.map((rol) => (
                   <tr
                     key={rol.id}
@@ -394,9 +421,11 @@ export default function RolesPage() {
                   </button>
                   <button
                     type="submit"
-                    className="bg-[#472825] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-black transition-all shadow-md"
+                    disabled={isSubmitting}
+                    className="bg-[#472825] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-black transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    {isEditing ? "Guardar Cambios" : "Crear Rol"}
+                    {isSubmitting && <Loader2 className="animate-spin" size={16} />}
+                    {isSubmitting ? "Guardando..." : (isEditing ? "Guardar Cambios" : "Crear Rol")}
                   </button>
                 </div>
               </form>

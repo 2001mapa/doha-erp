@@ -3,10 +3,11 @@
 import React, { useState } from "react";
 import { Plus, Settings, FileSpreadsheet, Search, Download, Trash2, Edit, FileText } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { createFacturaCompleta, getDetallesFactura, getFacturas } from "@/src/actions/facturacion";
+import { createFacturaCompleta, updateFactura, getDetallesFactura, getFacturas } from "@/src/actions/facturacion";
 import { getProductos } from "@/src/actions/inventario";
 import type { Producto } from "@/src/types/database.types";
 import { generarFacturaPDF } from "@/src/utils/exportPdf";
+import { exportToExcel } from "@/src/utils/exportExcel";
 
 // Mock Data Interfaces
 interface UserConfig {
@@ -26,10 +27,14 @@ export default function FacturasPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [tipoDocumentoSeleccionado, setTipoDocumentoSeleccionado] = useState("REM");
+  const [editingFacturaId, setEditingFacturaId] = useState<string | null>(null);
 
   // Filtros de búsqueda
   const [filtroNumFactura, setFiltroNumFactura] = useState("");
   const [filtroCliente, setFiltroCliente] = useState("");
+
+  // Estado del cliente seleccionado en el formulario
+  const [clienteSeleccionado, setClienteSeleccionado] = useState({ nit: "", nombre: "", id: "" });
 
   // Real Data from Supabase
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -136,6 +141,19 @@ export default function FacturasPage() {
     setFacturasBD(facturasBD.filter((f) => f.id !== id));
   };
 
+  const handleExportExcel = () => {
+    // Mapear facturas para Excel
+    const dataToExport = facturasFiltradas.map(f => ({
+      "Número de Factura": f.documento || f.numero_factura || "",
+      "Fecha": f.created_at ? new Date(f.created_at).toLocaleDateString() : "",
+      "Cliente (NIT)": f.terceros?.nit || "N/A",
+      "Cliente (Nombre)": f.terceros?.nombre || "Consumidor Final",
+      "Total": f.total ? f.total.toLocaleString() : "0",
+      "Estado": f.estado || "PENDIENTE"
+    }));
+    exportToExcel(dataToExport, "Listado_Facturas_DOHA");
+  };
+
   // Optional state for PDF generation
   const [isGeneratingPDF, setIsGeneratingPDF] = useState<string | null>(null);
 
@@ -176,17 +194,42 @@ export default function FacturasPage() {
     setShowCreateForm(true);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleEditFacturaClick = async (f: any) => {
+    setEditingFacturaId(f.id);
+    setTipoDocumentoSeleccionado(f.documento?.split('-')[0] || "REM");
+    if (f.terceros) {
+      setClienteSeleccionado({
+        nit: f.terceros.nit || "",
+        nombre: f.terceros.nombre || "Consumidor Final",
+        id: f.tercero_id || ""
+      });
+    }
+
+    // Fetch real detalles
+    const res = await getDetallesFactura(f.id);
+    if (res.success && res.data) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mapeados = res.data.map((d: any) => ({
+        producto_id: d.producto_id,
+        nombre: d.productos?.descripcion || "Producto",
+        cantidad: d.cantidad,
+        precio_unitario: d.precio_unitario,
+        subtotal: d.cantidad * d.precio_unitario
+      }));
+      setCarritoDetalles(mapeados);
+    } else {
+      setCarritoDetalles([]);
+    }
+
+    // Abrir modal directamente
+    setShowCreateForm(true);
+  };
+
   const handleEmitirFactura = async () => {
     setIsSaving(true);
     try {
-      // Mocking selected client and details data from a "shopping cart" or form
-      const clienteMock = {
-        nombre: "CLIENTE VIP 1",
-        nit: "900.123.456-7"
-      };
-
-
-
       if (carritoDetalles.length === 0) {
         alert("El carrito está vacío. Agregue productos.");
         setIsSaving(false);
@@ -195,6 +238,7 @@ export default function FacturasPage() {
 
       const totales = calcularTotales();
       const facturaMockPayload = {
+        tercero_id: clienteSeleccionado.id || "00000000-0000-0000-0000-000000000000",
         documento: `${tipoDocumentoSeleccionado}-${Math.floor(Math.random() * 10000)}`,
         fecha: new Date().toLocaleDateString(),
         valor_bruto: totales.valorBruto,
@@ -203,28 +247,34 @@ export default function FacturasPage() {
         estado: "Pendiente"
       };
 
-      const res = await createFacturaCompleta(facturaMockPayload, carritoDetalles);
+      let res;
+      if (editingFacturaId) {
+        res = await updateFactura(editingFacturaId, {
+          datosFactura: {
+            // Note: en un caso real se actualizarían más datos provenientes del UI,
+            // pero para esta prueba se preserva la estructura mock agregando campos.
+            documento: facturaMockPayload.documento,
+            fecha: facturaMockPayload.fecha,
+            valor_bruto: totales.valorBruto,
+            impuesto: totales.impuesto,
+            total: totales.total,
+            estado: facturaMockPayload.estado,
+            tercero_id: facturaMockPayload.tercero_id
+          },
+          arrayDetalles: carritoDetalles
+        });
+      } else {
+        res = await createFacturaCompleta(facturaMockPayload, carritoDetalles);
+      }
 
       if (res.success) {
-        // Add to local state to reflect UI changes immediately
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const newFactura: any = {
-          id: res.facturaId || Math.random().toString(),
-          documento: facturaMockPayload.documento,
-          numero_factura: facturaMockPayload.documento,
-          fecha: facturaMockPayload.fecha,
-          terceros: {
-            nombre: clienteMock.nombre,
-            nit: clienteMock.nit
-          },
-          valor_bruto: facturaMockPayload.valor_bruto,
-          impuesto: facturaMockPayload.impuesto,
-          total: facturaMockPayload.total,
-          estado: facturaMockPayload.estado,
-          created_at: new Date().toISOString()
-        };
-        setFacturasBD([newFactura, ...facturasBD]);
+        // Refrescar lista completa para reflejar los cambios reales de base de datos
+        const facturasRes = await getFacturas();
+        if (facturasRes.success && facturasRes.data) {
+          setFacturasBD(facturasRes.data);
+        }
         setShowCreateForm(false);
+        setEditingFacturaId(null);
       } else {
         alert("Error al guardar: " + res.error);
       }
@@ -244,14 +294,22 @@ export default function FacturasPage() {
           <button className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-2 px-4 rounded shadow-sm transition-colors">
             Emitir Pendientes
           </button>
-          <button className="bg-[#D3AB80] hover:bg-[#c29b70] text-white font-bold py-2 px-4 rounded shadow-sm transition-colors flex items-center">
+          <button
+            onClick={handleExportExcel}
+            className="bg-[#D3AB80] hover:bg-[#c29b70] text-white font-bold py-2 px-4 rounded shadow-sm transition-colors flex items-center"
+          >
             <span title="Descargar Excel" className="flex items-center">
               <FileSpreadsheet className="w-5 h-5 mr-2" />
               Descargar listado a excel
             </span>
           </button>
           <button
-            onClick={() => setShowNewModal(true)}
+            onClick={() => {
+              setEditingFacturaId(null);
+              setCarritoDetalles([]);
+              setClienteSeleccionado({ nit: "", nombre: "", id: "" });
+              setShowNewModal(true);
+            }}
             className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded shadow-sm transition-colors flex items-center"
           >
             <Plus className="w-5 h-5 mr-2" />
@@ -414,7 +472,11 @@ export default function FacturasPage() {
                 facturasFiltradas.map((f) => (
                   <tr key={f.id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4 flex space-x-2">
-                      <button className="text-gray-400 hover:text-[#D3AB80] transition-colors" title="Editar">
+                      <button
+                        onClick={() => handleEditFacturaClick(f)}
+                        className="text-gray-400 hover:text-[#D3AB80] transition-colors"
+                        title="Editar"
+                      >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
@@ -685,7 +747,7 @@ export default function FacturasPage() {
                   disabled={isSaving}
                   className="px-6 py-2 bg-[#D3AB80] hover:bg-[#c29b70] text-white rounded font-bold transition-colors disabled:opacity-50 flex items-center"
                 >
-                  {isSaving ? "Guardando..." : "Emitir / Guardar Factura"}
+                  {isSaving ? "Guardando..." : editingFacturaId ? "Actualizar Factura" : "Emitir / Guardar Factura"}
                 </button>
               </div>
             </motion.div>

@@ -7,4 +7,3 @@ export const exportToExcel = (data: any[], filename: string) => {
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Datos');
   XLSX.writeFile(workbook, `${filename}.xlsx`);
 };
-

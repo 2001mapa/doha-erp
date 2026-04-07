@@ -3,22 +3,12 @@
 import React, { useState } from "react";
 import { Plus, Settings, FileSpreadsheet, Search, Download, Trash2, Edit, FileText } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { createFacturaCompleta, updateFactura, getDetallesFactura, getFacturas } from "@/src/actions/facturacion";
+import { createFacturaCompleta, updateFactura, getDetallesFactura, getFacturas, updateFacturasPendientes, updatePerfilUsuario } from "@/src/actions/facturacion";
 import { getProductos } from "@/src/actions/inventario";
 import type { Producto } from "@/src/types/database.types";
 import { generarFacturaPDF } from "@/src/utils/exportPdf";
 import { exportToExcel } from "@/src/utils/exportExcel";
-
-// Mock Data Interfaces
-interface UserConfig {
-  id: string;
-  usuario: string;
-  precioNivelMin: string;
-  dcto: string;
-  dctoMax: number;
-  precioMod: string;
-  facturaDebajoCosto: string;
-}
+import { supabase } from "@/src/lib/supabaseClient";
 
 export default function FacturasPage() {
   // State for modals
@@ -28,6 +18,19 @@ export default function FacturasPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [tipoDocumentoSeleccionado, setTipoDocumentoSeleccionado] = useState("REM");
   const [editingFacturaId, setEditingFacturaId] = useState<string | null>(null);
+
+  const [isEmitiendoPendientes, setIsEmitiendoPendientes] = useState(false);
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
+
+  // Form config
+  const [configData, setConfigData] = useState({
+    usuario: "",
+    precioNivelMin: "NO APLICA",
+    dcto: false,
+    dctoMax: 0,
+    precioMod: false,
+    facturaDebajoCosto: false
+  });
 
   // Filtros de búsqueda
   const [filtroNumFactura, setFiltroNumFactura] = useState("");
@@ -108,27 +111,25 @@ export default function FacturasPage() {
     loadFacturas();
   }, []);
 
-
-  const [userConfigs] = useState<UserConfig[]>([
-    {
-      id: "1",
-      usuario: "Sede Medellín",
-      precioNivelMin: "Precio 1",
-      dcto: "SI",
-      dctoMax: 10,
-      precioMod: "NO",
-      facturaDebajoCosto: "NO",
-    },
-    {
-      id: "2",
-      usuario: "Sede Bogotá",
-      precioNivelMin: "Precio 2",
-      dcto: "SI",
-      dctoMax: 5,
-      precioMod: "SI",
-      facturaDebajoCosto: "NO",
-    },
-  ]);
+  // Fetch actual user logic
+  React.useEffect(() => {
+    async function loadUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setConfigData({
+          usuario: user.user_metadata?.usuario || user.email || "",
+          precioNivelMin: user.user_metadata?.precioNivelMin || "NO APLICA",
+          dcto: user.user_metadata?.dcto || false,
+          dctoMax: user.user_metadata?.dctoMax || 0,
+          precioMod: user.user_metadata?.precioMod || false,
+          facturaDebajoCosto: user.user_metadata?.facturaDebajoCosto || false,
+        });
+      }
+    }
+    if (showConfigModal) {
+      loadUser();
+    }
+  }, [showConfigModal]);
 
   const facturasFiltradas = facturasBD.filter((f) => {
     const matchNumFactura = (f.documento || f.numero_factura || "").toLowerCase().includes(filtroNumFactura.toLowerCase());
@@ -285,14 +286,57 @@ export default function FacturasPage() {
     }
   };
 
+  const handleEmitirPendientes = async () => {
+    setIsEmitiendoPendientes(true);
+    try {
+      const res = await updateFacturasPendientes();
+      if (res.success) {
+        const facturasRes = await getFacturas();
+        if (facturasRes.success && facturasRes.data) {
+          setFacturasBD(facturasRes.data);
+        }
+        alert("Facturas pendientes emitidas con éxito");
+      } else {
+        alert("Error al emitir facturas: " + res.error);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Ocurrió un error inesperado al emitir las facturas pendientes");
+    } finally {
+      setIsEmitiendoPendientes(false);
+    }
+  };
+
+  const handleSaveConfig = async () => {
+    setIsSavingConfig(true);
+    try {
+      const res = await updatePerfilUsuario(configData);
+      if (res.success) {
+        alert("Configuración de usuario guardada con éxito");
+        setShowConfigModal(false);
+      } else {
+        alert("Error al guardar configuración: " + res.error);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Ocurrió un error inesperado al guardar la configuración");
+    } finally {
+      setIsSavingConfig(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-6 text-[#472825] bg-[#fdfbf9] min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-black">Facturas</h1>
         {/* 1. Botones de Acción Superiores */}
         <div className="flex space-x-3">
-          <button className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-2 px-4 rounded shadow-sm transition-colors">
-            Emitir Pendientes
+          <button
+            onClick={handleEmitirPendientes}
+            disabled={isEmitiendoPendientes}
+            className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-2 px-4 rounded shadow-sm transition-colors disabled:opacity-50"
+          >
+            {isEmitiendoPendientes ? "Emitiendo..." : "Emitir Pendientes"}
           </button>
           <button
             onClick={handleExportExcel}
@@ -783,30 +827,41 @@ export default function FacturasPage() {
               </div>
 
               <div className="p-6 overflow-y-auto">
-                {/* Fila superior de controles (Grid) */}
+                {/* Controles de Configuración del Perfil */}
                 <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6 items-end bg-white p-4 rounded border border-gray-200">
                   <div className="md:col-span-1">
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Usuario
                     </label>
-                    <select className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#D3AB80]">
-                      <option value="">Seleccionar...</option>
-                      <option value="Sede Medellín">Sede Medellín</option>
-                      <option value="Sede Bogotá">Sede Bogotá</option>
-                    </select>
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#D3AB80]"
+                      value={configData.usuario}
+                      onChange={(e) => setConfigData({ ...configData, usuario: e.target.value })}
+                    />
                   </div>
                   <div className="md:col-span-1">
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Precio nivel min
                     </label>
-                    <select className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#D3AB80]">
+                    <select
+                      className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#D3AB80]"
+                      value={configData.precioNivelMin}
+                      onChange={(e) => setConfigData({ ...configData, precioNivelMin: e.target.value })}
+                    >
                       <option value="NO APLICA">NO APLICA</option>
                       <option value="Precio 1">Precio 1</option>
                       <option value="Precio 2">Precio 2</option>
                     </select>
                   </div>
                   <div className="md:col-span-1 flex items-center h-10 space-x-2">
-                    <input type="checkbox" id="dcto" className="w-4 h-4 text-[#D3AB80] focus:ring-[#D3AB80] border-gray-300 rounded" />
+                    <input
+                      type="checkbox"
+                      id="dcto"
+                      className="w-4 h-4 text-[#D3AB80] focus:ring-[#D3AB80] border-gray-300 rounded"
+                      checked={configData.dcto}
+                      onChange={(e) => setConfigData({ ...configData, dcto: e.target.checked })}
+                    />
                     <label htmlFor="dcto" className="text-sm font-medium text-gray-700 cursor-pointer">
                       Descuento Aplica
                     </label>
@@ -819,55 +874,45 @@ export default function FacturasPage() {
                       type="number"
                       placeholder="0"
                       className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#D3AB80]"
+                      value={configData.dctoMax}
+                      onChange={(e) => setConfigData({ ...configData, dctoMax: Number(e.target.value) })}
                     />
                   </div>
                   <div className="md:col-span-1 flex flex-col space-y-2 mt-2 md:mt-0 justify-center">
                     <div className="flex items-center space-x-2">
-                      <input type="checkbox" id="noMod" className="w-4 h-4 text-[#D3AB80] focus:ring-[#D3AB80] border-gray-300 rounded" />
+                      <input
+                        type="checkbox"
+                        id="noMod"
+                        className="w-4 h-4 text-[#D3AB80] focus:ring-[#D3AB80] border-gray-300 rounded"
+                        checked={configData.precioMod}
+                        onChange={(e) => setConfigData({ ...configData, precioMod: e.target.checked })}
+                      />
                       <label htmlFor="noMod" className="text-xs font-medium text-gray-700 cursor-pointer leading-tight">
                         No Modifica Precio
                       </label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <input type="checkbox" id="noCosto" className="w-4 h-4 text-[#D3AB80] focus:ring-[#D3AB80] border-gray-300 rounded" />
+                      <input
+                        type="checkbox"
+                        id="noCosto"
+                        className="w-4 h-4 text-[#D3AB80] focus:ring-[#D3AB80] border-gray-300 rounded"
+                        checked={configData.facturaDebajoCosto}
+                        onChange={(e) => setConfigData({ ...configData, facturaDebajoCosto: e.target.checked })}
+                      />
                       <label htmlFor="noCosto" className="text-xs font-medium text-gray-700 cursor-pointer leading-tight">
                         No Precio Menor costo
                       </label>
                     </div>
                   </div>
                   <div className="md:col-span-1 flex justify-end">
-                     <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow-sm transition-colors w-full">
-                       GUARDAR
+                     <button
+                       onClick={handleSaveConfig}
+                       disabled={isSavingConfig}
+                       className="bg-[#D3AB80] hover:bg-[#c29b70] text-white font-bold py-2 px-4 rounded shadow-sm transition-colors w-full disabled:opacity-50"
+                     >
+                       {isSavingConfig ? "Guardando..." : "GUARDAR"}
                      </button>
                   </div>
-                </div>
-
-                {/* Tabla interna del modal */}
-                <div className="border border-gray-200 rounded overflow-hidden">
-                   <table className="w-full text-left text-sm whitespace-nowrap">
-                     <thead className="bg-gray-100 text-gray-600 font-semibold border-b">
-                       <tr>
-                         <th className="p-3">Usuario</th>
-                         <th className="p-3">Precio nivel min</th>
-                         <th className="p-3">Dcto</th>
-                         <th className="p-3 text-center">Dcto Max</th>
-                         <th className="p-3 text-center">Precio Mod</th>
-                         <th className="p-3 text-center">Factura Debajo de Costo</th>
-                       </tr>
-                     </thead>
-                     <tbody className="divide-y divide-gray-200">
-                        {userConfigs.map((config) => (
-                          <tr key={config.id} className="hover:bg-gray-50">
-                            <td className="p-3 font-medium">{config.usuario}</td>
-                            <td className="p-3">{config.precioNivelMin}</td>
-                            <td className="p-3">{config.dcto}</td>
-                            <td className="p-3 text-center">{config.dctoMax}%</td>
-                            <td className="p-3 text-center">{config.precioMod}</td>
-                            <td className="p-3 text-center">{config.facturaDebajoCosto}</td>
-                          </tr>
-                        ))}
-                     </tbody>
-                   </table>
                 </div>
               </div>
               <div className="p-4 border-t bg-gray-50 flex justify-end">

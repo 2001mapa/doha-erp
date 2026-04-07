@@ -9,8 +9,10 @@ import type { Producto } from "@/src/types/database.types";
 import { generarFacturaPDF } from "@/src/utils/exportPdf";
 import { exportToExcel } from "@/src/utils/exportExcel";
 import { supabase } from "@/src/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 
 export default function FacturasPage() {
+  const router = useRouter();
   // State for modals
   const [showNewModal, setShowNewModal] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -295,6 +297,7 @@ export default function FacturasPage() {
         if (facturasRes.success && facturasRes.data) {
           setFacturasBD(facturasRes.data);
         }
+        router.refresh();
         alert("Facturas pendientes emitidas con éxito");
       } else {
         alert("Error al emitir facturas: " + res.error);

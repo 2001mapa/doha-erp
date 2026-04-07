@@ -26,7 +26,7 @@ export async function getRoles() {
   try {
     const { data, error } = await supabase
       .from('roles')
-      .select('*');
+      .select('id, nombre');
 
     if (error) {
       console.error('Error fetching roles:', error);

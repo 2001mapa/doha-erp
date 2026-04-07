@@ -45,6 +45,11 @@ export default function UsuariosPage() {
 
   // --- FUNCIONES LÓGICAS ---
   const loadData = async () => {
+    const rolesFallback = [
+      { id: 1, nombre: 'Administrador' },
+      { id: 2, nombre: 'Contador' },
+      { id: 3, nombre: 'Vendedor' }
+    ];
     try {
       const [usuariosRes, rolesRes] = await Promise.all([
         getUsuarios(),
@@ -54,15 +59,26 @@ export default function UsuariosPage() {
       if (usuariosRes.success) {
         setUsuarios(usuariosRes.data || []);
       }
-      if (rolesRes.success) {
-        setRoles(rolesRes.data || []);
+
+      console.log("Roles obtenidos:", rolesRes.data, rolesRes.error);
+
+      if (rolesRes.success && rolesRes.data && rolesRes.data.length > 0) {
+        setRoles(rolesRes.data);
+      } else {
+        setRoles(rolesFallback);
       }
     } catch (error) {
       console.error("Error loading data:", error);
+      setRoles(rolesFallback);
     }
   };
 
   useEffect(() => {
+    const rolesFallback = [
+      { id: 1, nombre: 'Administrador' },
+      { id: 2, nombre: 'Contador' },
+      { id: 3, nombre: 'Vendedor' }
+    ];
     let isMounted = true;
     const fetchInitData = async () => {
       try {
@@ -76,12 +92,20 @@ export default function UsuariosPage() {
           if (usuariosRes.success) {
             setUsuarios(usuariosRes.data || []);
           }
-          if (rolesRes.success) {
-            setRoles(rolesRes.data || []);
+
+          console.log("Roles obtenidos:", rolesRes.data, rolesRes.error);
+
+          if (rolesRes.success && rolesRes.data && rolesRes.data.length > 0) {
+            setRoles(rolesRes.data);
+          } else {
+            setRoles(rolesFallback);
           }
         }
       } catch (error) {
         console.error("Error loading data:", error);
+        if (isMounted) {
+          setRoles(rolesFallback);
+        }
       }
     };
 

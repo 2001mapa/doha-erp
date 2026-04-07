@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   Plus,
@@ -13,21 +13,14 @@ import {
   Mail,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-// Datos iniciales
-const mockUsuariosIniciales = [
-  {
-    id: 1,
-    nombre: "Admin Principal",
-    email: "admin@doha18k.com",
-    rol: "Administrador",
-    estado: "Activo",
-  },
-];
+import { getUsuarios, getRoles, crearUsuario } from "@/src/actions/usuarios";
 
 export default function UsuariosPage() {
   // --- ESTADOS LOCALES ---
-  const [usuarios, setUsuarios] = useState(mockUsuariosIniciales);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [usuarios, setUsuarios] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [roles, setRoles] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("Todos");
 
@@ -37,22 +30,68 @@ export default function UsuariosPage() {
 
   // Estado para el formulario
   const [formData, setFormData] = useState({
-    id: 0,
+    id: "",
     nombre: "",
     email: "",
-    rol: "Vendedor",
+    rol_id: "",
     estado: "Activo",
   });
 
   // --- FUNCIONES LÓGICAS ---
+  const loadData = async () => {
+    try {
+      const [usuariosRes, rolesRes] = await Promise.all([
+        getUsuarios(),
+        getRoles()
+      ]);
+
+      if (usuariosRes.success) {
+        setUsuarios(usuariosRes.data || []);
+      }
+      if (rolesRes.success) {
+        setRoles(rolesRes.data || []);
+      }
+    } catch (error) {
+      console.error("Error loading data:", error);
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchInitData = async () => {
+      try {
+        const [usuariosRes, rolesRes] = await Promise.all([
+          getUsuarios(),
+          getRoles()
+        ]);
+
+        if (isMounted) {
+          if (usuariosRes.success) {
+            setUsuarios(usuariosRes.data || []);
+          }
+          if (rolesRes.success) {
+            setRoles(rolesRes.data || []);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+      }
+    };
+
+    fetchInitData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Abrir modal para crear
   const handleOpenCreate = () => {
     setFormData({
-      id: 0,
+      id: "",
       nombre: "",
       email: "",
-      rol: "Vendedor",
+      rol_id: roles.length > 0 ? roles[0].id : "",
       estado: "Activo",
     });
     setIsEditing(false);
@@ -68,26 +107,37 @@ export default function UsuariosPage() {
   };
 
   // Borrar usuario
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     if (confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
       setUsuarios(usuarios.filter((u) => u.id !== id));
     }
   };
 
   // Guardar (Crear o Editar)
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (isEditing) {
       // Actualizar existente
       setUsuarios(usuarios.map((u) => (u.id === formData.id ? formData : u)));
+      setIsModalOpen(false);
     } else {
-      // Crear nuevo (le asignamos un ID temporal usando Date.now)
-      const nuevoUsuario = { ...formData, id: Date.now() };
-      setUsuarios([...usuarios, nuevoUsuario]);
+      // Crear nuevo
+      const response = await crearUsuario(formData);
+      if (response.success) {
+        // Recargar datos o agregar a la lista
+        if (response.data) {
+           setUsuarios([...usuarios, response.data]);
+        } else {
+           await loadData();
+        }
+        setIsModalOpen(false);
+        // Show success toast (simplificado con alert para este entorno)
+        alert("Usuario creado exitosamente");
+      } else {
+        alert("Error al crear usuario: " + response.error);
+      }
     }
-
-    setIsModalOpen(false);
   };
 
   // Manejar cambios en los inputs
@@ -99,10 +149,11 @@ export default function UsuariosPage() {
 
   // Filtrar lista para la tabla
   const usuariosFiltrados = usuarios.filter((u) => {
+    const rolNombre = u.roles?.nombre || "";
     const coincideBusqueda =
       u.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.rol.toLowerCase().includes(searchTerm.toLowerCase());
+      rolNombre.toLowerCase().includes(searchTerm.toLowerCase());
 
     const coincideEstado =
       filtroEstado === "Todos" || u.estado === filtroEstado;
@@ -214,12 +265,12 @@ export default function UsuariosPage() {
                         <Shield
                           size={16}
                           className={
-                            usuario.rol === "Administrador"
+                            usuario.roles?.nombre === "Administrador"
                               ? "text-amber-500"
                               : "text-gray-400"
                           }
                         />
-                        {usuario.rol}
+                        {usuario.roles?.nombre || "Sin rol"}
                       </div>
                     </td>
                     <td className="p-5">
@@ -365,14 +416,18 @@ export default function UsuariosPage() {
                         size={18}
                       />
                       <select
-                        name="rol"
-                        value={formData.rol}
+                        name="rol_id"
+                        value={formData.rol_id}
                         onChange={handleChange}
+                        required
                         className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825] appearance-none"
                       >
-                        <option value="Administrador">Administrador</option>
-                        <option value="Vendedor">Vendedor</option>
-                        <option value="Contador">Contador</option>
+                        <option value="" disabled>Selecciona un rol</option>
+                        {roles.map((rol) => (
+                          <option key={rol.id} value={rol.id}>
+                            {rol.nombre}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>

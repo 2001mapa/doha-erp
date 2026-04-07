@@ -1,13 +1,18 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Save,
   UploadCloud,
   CheckCircle2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "../../../../../src/lib/supabaseClient";
+import { updateDatosEmpresa } from "../../../../../src/actions/empresa";
+import { useRouter } from "next/navigation";
 
 export default function EmpresaPage() {
+  const router = useRouter();
+  const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     tipoDocumento: "31 - NIT",
     identificacion: "900.123.456",
@@ -35,6 +40,61 @@ export default function EmpresaPage() {
   });
 
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEmpresa = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("empresa")
+          .select("*")
+          .limit(1)
+          .single();
+
+        if (error) {
+          console.error("Error fetching empresa:", error.message);
+          setIsLoading(false);
+          return;
+        }
+
+        if (data) {
+          setEmpresaId(data.id);
+          setFormData({
+            tipoDocumento: data.tipo_identificacion || "31 - NIT",
+            identificacion: data.numero_identificacion || "",
+            dv: data.dv || "",
+            razonSocial: data.razon_social || "",
+            nombreComercial: data.nombre_comercial || "",
+            regimen: data.regimen || "Régimen Común",
+            actividadEconomica: data.actividad_economica || "",
+            fechaActividad: data.fecha_actividad ? data.fecha_actividad.split('T')[0] : "",
+            direccion: data.direccion || "",
+            departamento: data.departamento || "Antioquia",
+            ciudad: data.ciudad || "Medellín",
+            barrio: data.barrio || "",
+            telefono: data.telefono || "",
+            telefono2: data.telefono2 || "",
+            email: data.email || "",
+            moneda: data.moneda || "Peso Colombiano",
+            consecutivosAutomaticos: data.consecutivos_automaticos || false,
+            fechaConsecutivo: data.fecha_consecutivo ? data.fecha_consecutivo.split('T')[0] : "",
+            decimalesCantidades: data.decimales_cantidades || 0,
+            decimalesValores: data.decimales_valores || 0,
+            decimalesCompras: data.decimales_compras || 0,
+            decimalesVentas: data.decimales_ventas || 0,
+            decimalesCartera: data.decimales_cartera || 0,
+          });
+        }
+      } catch (err) {
+        console.error("Exception fetching empresa:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEmpresa();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -50,11 +110,38 @@ export default function EmpresaPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    if (!empresaId) {
+        console.error("No company ID found to update.");
+        return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await updateDatosEmpresa(formData, empresaId);
+      if (response.success) {
+        setIsSaved(true);
+        setTimeout(() => setIsSaved(false), 3000);
+        router.refresh();
+      } else {
+        console.error("Update failed:", response.error);
+        alert("Hubo un error al guardar los cambios: " + response.error);
+      }
+    } catch (err) {
+      console.error("Exception during update:", err);
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#fdfbf9] flex items-center justify-center">
+        <div className="text-[#472825] font-medium">Cargando datos de la empresa...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#fdfbf9] pb-24">
@@ -74,10 +161,11 @@ export default function EmpresaPage() {
           </div>
           <button
             onClick={handleSubmit}
-            className="bg-[#D3AB80] text-white px-6 py-3 rounded-lg text-sm font-bold hover:bg-[#b8956e] transition-colors flex items-center justify-center gap-2 w-full md:w-auto"
+            disabled={isSaving}
+            className="bg-[#D3AB80] text-white px-6 py-3 rounded-lg text-sm font-bold hover:bg-[#b8956e] transition-colors flex items-center justify-center gap-2 w-full md:w-auto disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <Save size={18} />
-            Guardar Cambios
+            {isSaving ? "Guardando..." : "Guardar Cambios"}
           </button>
         </div>
 

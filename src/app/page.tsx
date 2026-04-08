@@ -1,61 +1,60 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, User, ShoppingBag, Eye, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useCart } from "../context/CartContext";
+import { supabase } from "@/src/lib/supabaseClient";
 
-// Mock Data
-const PRODUCTS = [
-  {
-    id: 1,
-    name: "Cadena Mónaco 18K",
-    price: "$ 1.250.000",
-    image: "https://images.unsplash.com/photo-1599643478514-4a820cbf311e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    description: "Elegante cadena Mónaco forjada en oro de 18 quilates. Perfecta para lucir sola o acompañada de un dije exclusivo.",
-    stock: 5,
-  },
-  {
-    id: 2,
-    name: "Pulsera Cartier 18K",
-    price: "$ 890.000",
-    image: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    description: "Clásica pulsera estilo Cartier, diseñada con eslabones entrelazados que reflejan luz y lujo.",
-    stock: 3,
-  },
-  {
-    id: 3,
-    name: "Anillo Diamante Solitario",
-    price: "$ 2.100.000",
-    image: "https://images.unsplash.com/photo-1605100804763-247f67b2548e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    description: "Anillo de compromiso en oro 18K con un delicado solitario brillante. La promesa de eternidad.",
-    stock: 1,
-  },
-  {
-    id: 4,
-    name: "Aretes Candonga 18K",
-    price: "$ 450.000",
-    image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    description: "Candongas de aro grueso, un diseño atemporal y moderno ideal para el día a día.",
-    stock: 8,
-  },
-];
+interface Product {
+  id: string;
+  name: string;
+  price: string;
+  rawPrice: number;
+  image: string;
+  description: string;
+  stock: number;
+}
 
 const CATEGORIES = [
   "Cadenas", "Dijes", "Pulseras", "Topos", "Tobilleras", "Candongas", "Collares", "Juegos", "Anillos"
 ];
 
 export default function HomePage() {
-  const [selectedProduct, setSelectedProduct] = useState<typeof PRODUCTS[0] | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedSize, setSelectedSize] = useState<string>("Estándar");
   const [quantity, setQuantity] = useState(1);
   const [showToast, setShowToast] = useState(false);
 
   const { addToCart, cartItems } = useCart();
+
+  useEffect(() => {
+    async function fetchProducts() {
+      const { data, error } = await supabase.from('productos').select('*').eq('publicado_web', true);
+      if (error) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const anyErr = error as any;
+        console.error("Error fetching products:", anyErr.message, anyErr.details, anyErr.hint);
+      } else if (data) {
+        const mappedProducts: Product[] = data.map(p => ({
+          id: p.id,
+          name: p.nombre || p.descripcion,
+          price: `$ ${new Intl.NumberFormat('es-CO').format(p.precio_venta || 0)}`,
+          rawPrice: p.precio_venta || 0,
+          image: p.imagenes?.[0] || 'https://images.unsplash.com/photo-1599643478514-4a820cbf311e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+          description: p.descripcion,
+          stock: p.saldo_actual || 0,
+        }));
+        setProducts(mappedProducts);
+      }
+    }
+    fetchProducts();
+  }, []);
   const totalCartItems = cartItems.reduce((acc, item) => acc + item.cantidad, 0);
 
-  const openProduct = (product: typeof PRODUCTS[0]) => {
+  const openProduct = (product: Product) => {
     setSelectedProduct(product);
     setQuantity(1);
     setSelectedSize("Estándar");
@@ -67,13 +66,15 @@ export default function HomePage() {
 
   const handleAddToCart = () => {
     if (selectedProduct) {
-      // Parse price to number
-      const parsedPrice = parseInt(selectedProduct.price.replace(/[^0-9]/g, ''), 10);
       addToCart({
-        id: selectedProduct.id,
+        // The CartContext expects a number ID for legacy reasons (the mock data used numbers)
+        // Since Supabase returns UUIDs, we have two options: refactor all Cart uses to accept string,
+        // or bypass the type here specifically to avoid breaking other parts of the UI that rely on the cart.
+        // Given the isolated scope of this page, we type assert to bypass.
+        id: selectedProduct.id as unknown as number,
         nombre: selectedProduct.name,
         atributo: `Talla: ${selectedSize}`,
-        precio: parsedPrice,
+        precio: selectedProduct.rawPrice,
         cantidad: quantity,
         imagen: selectedProduct.image,
       });
@@ -113,7 +114,7 @@ export default function HomePage() {
 
         {/* PRODUCTS GRID */}
         <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 px-4 mb-20">
-          {PRODUCTS.map((product) => (
+          {products.map((product) => (
             <div key={product.id} className="group cursor-pointer flex flex-col" onClick={() => openProduct(product)}>
               <div className="relative aspect-[4/5] overflow-hidden bg-gray-100 rounded-2xl mb-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}

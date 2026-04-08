@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState } from "react";
@@ -8,11 +9,14 @@ import { getProductos } from "@/src/actions/inventario";
 import type { Producto } from "@/src/types/database.types";
 import { generarFacturaPDF } from "@/src/utils/exportPdf";
 import { exportToExcel } from "@/src/utils/exportExcel";
-import { supabase } from "@/src/lib/supabaseClient";
+
 import { useRouter } from "next/navigation";
+import { useAdminAuth } from "@/src/context/AdminAuthContext";
+
 
 export default function FacturasPage() {
   const router = useRouter();
+  const { hasPermission } = useAdminAuth();
   // State for modals
   const [showNewModal, setShowNewModal] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -42,13 +46,13 @@ export default function FacturasPage() {
   const [clienteSeleccionado, setClienteSeleccionado] = useState({ nit: "", nombre: "", id: "" });
 
   // Real Data from Supabase
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const [facturasBD, setFacturasBD] = useState<any[]>([]);
 
   // State for real products and cart
   const [productosBD, setProductosBD] = useState<Producto[]>([]);
   const [busquedaProducto, setBusquedaProducto] = useState("");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const [carritoDetalles, setCarritoDetalles] = useState<any[]>([]);
 
   // Fetch products on mount
@@ -118,7 +122,7 @@ export default function FacturasPage() {
     async function loadUser() {
       // Modo desarrollo: comentamos supabase.auth.getUser() y mockeamos los datos
       // const { data: { user } } = await supabase.auth.getUser();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const user: any = {
         email: "admin@doha.com",
         user_metadata: {
@@ -175,18 +179,18 @@ export default function FacturasPage() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState<string | null>(null);
 
   // Handler for Exporting PDF
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const handleExportPDF = async (f: any) => {
     setIsGeneratingPDF(f.id);
     const cliente = f.terceros ? { nombre: f.terceros.nombre, nit: f.terceros.nit } : { nombre: 'Consumidor Final', nit: 'N/A' };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     let detallesExport: any[] = [];
 
     // Traer los detalles de la BD
     const res = await getDetallesFactura(f.id);
     if (res.success && res.data) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       detallesExport = res.data.map((d: any) => ({
         nombre: d.productos?.descripcion || "Producto Desconocido",
         cantidad: d.cantidad,
@@ -211,8 +215,8 @@ export default function FacturasPage() {
     setShowCreateForm(true);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+
   const handleEditFacturaClick = async (f: any) => {
     setEditingFacturaId(f.id);
     setTipoDocumentoSeleccionado(f.documento?.split('-')[0] || "REM");
@@ -227,7 +231,7 @@ export default function FacturasPage() {
     // Fetch real detalles
     const res = await getDetallesFactura(f.id);
     if (res.success && res.data) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const mapeados = res.data.map((d: any) => ({
         producto_id: d.producto_id,
         nombre: d.productos?.descripcion || "Producto",
@@ -364,7 +368,8 @@ export default function FacturasPage() {
               Descargar listado a excel
             </span>
           </button>
-          <button
+          {hasPermission('facturacion.crear') && (
+<button
             onClick={() => {
               setEditingFacturaId(null);
               setCarritoDetalles([]);
@@ -376,6 +381,7 @@ export default function FacturasPage() {
             <Plus className="w-5 h-5 mr-2" />
             Nueva Factura
           </button>
+)}
           <button
             onClick={() => setShowConfigModal(true)}
             className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded shadow-sm transition-colors flex items-center"

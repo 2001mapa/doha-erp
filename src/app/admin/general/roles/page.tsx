@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState, useEffect } from "react";
 import {
@@ -15,9 +16,10 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getRolesCompletos, crearRol, eliminarRol } from "@/src/actions/usuarios";
+import { getPermisos, getPermisosRol, updatePermisosRol } from "@/src/actions/permisos";
 
 export default function RolesPage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const [roles, setRoles] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("Todos");
@@ -35,6 +37,9 @@ export default function RolesPage() {
     estado: "Activo",
   });
 
+  const [permisos, setPermisos] = useState<any[]>([]);
+  const [checkedPermisos, setCheckedPermisos] = useState<number[]>([]);
+
   const loadRoles = async () => {
     const response = await getRolesCompletos();
     if (response.success && response.data) {
@@ -50,12 +55,16 @@ export default function RolesPage() {
   };
 
   useEffect(() => {
-    const fetchRoles = async () => {
+    const fetchInitialData = async () => {
       setIsLoading(true);
       await loadRoles();
+      const permsRes = await getPermisos();
+      if (permsRes.success && permsRes.data) {
+        setPermisos(permsRes.data);
+      }
       setIsLoading(false);
     };
-    fetchRoles();
+    fetchInitialData();
   }, []);
 
   const handleOpenCreate = () => {
@@ -66,15 +75,24 @@ export default function RolesPage() {
       usuariosActivos: 0,
       estado: "Activo",
     });
+    setCheckedPermisos([]);
     setIsEditing(false);
     setIsModalOpen(true);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleOpenEdit = (rol: any) => {
+
+  const handleOpenEdit = async (rol: any) => {
     setFormData(rol);
     setIsEditing(true);
     setIsModalOpen(true);
+
+    // Fetch permisos for this rol
+    const res = await getPermisosRol(rol.id);
+    if (res.success && res.data) {
+      setCheckedPermisos(res.data);
+    } else {
+      setCheckedPermisos([]);
+    }
   };
 
   const handleDelete = async (id: number, usuariosActivos: number) => {
@@ -97,24 +115,32 @@ export default function RolesPage() {
     e.preventDefault();
     setIsSubmitting(true);
     if (isEditing) {
-      // Logic for editing a role can go here. For now, ignoring editing.
-      setRoles(roles.map((r) => (r.id === formData.id ? formData : r)));
-      setIsModalOpen(false);
-      setIsSubmitting(false);
-    } else {
-      const response = await crearRol(formData);
+      const response = await updatePermisosRol(formData.id, checkedPermisos);
       setIsSubmitting(false);
       if (response.success) {
-        // En una app real usaríamos un toast (ej. react-hot-toast), pero por mantener
-        // la simplicidad y consistencia en este entorno, usamos alert o log.
-        // Simulando un toast con alert por ahora.
+        alert("¡Permisos actualizados exitosamente!");
+        setIsModalOpen(false);
+      } else {
+        alert("Error al actualizar permisos: " + response.error);
+      }
+    } else {
+      const response = await crearRol(formData);
+      if (response.success && response.data) {
+        await updatePermisosRol(response.data.id, checkedPermisos);
         alert("¡Rol creado exitosamente!");
         loadRoles();
         setIsModalOpen(false);
       } else {
         alert("Error al crear el rol: " + response.error);
       }
+      setIsSubmitting(false);
     }
+  };
+
+  const togglePermiso = (id: number) => {
+    setCheckedPermisos((prev) =>
+      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+    );
   };
 
   const handleChange = (
@@ -408,6 +434,26 @@ export default function RolesPage() {
                       <option value="Activo">Activo</option>
                       <option value="Inactivo">Inactivo</option>
                     </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                    Permisos del Rol
+                  </label>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 max-h-48 overflow-y-auto space-y-2">
+                    {permisos.map((permiso) => (
+                      <label key={permiso.id} className="flex items-center gap-3 cursor-pointer p-1 hover:bg-gray-100 rounded">
+                        <input
+                          type="checkbox"
+                          checked={checkedPermisos.includes(permiso.id)}
+                          onChange={() => togglePermiso(permiso.id)}
+                          className="w-4 h-4 accent-[#D3AB80] cursor-pointer"
+                        />
+                        <span className="text-sm font-medium text-[#472825]">{permiso.nombre}</span>
+                        <span className="text-xs text-gray-500 ml-auto">{permiso.descripcion}</span>
+                      </label>
+                    ))}
                   </div>
                 </div>
 

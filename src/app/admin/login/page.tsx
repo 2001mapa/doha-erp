@@ -12,7 +12,7 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const { login } = useAdminAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -21,7 +21,7 @@ export default function AdminLoginPage() {
       return;
     }
 
-    const success = login(usuario, clave);
+    const success = await login(usuario, clave);
 
     if (success) {
       // Si el rol es vendedor, la redirección se debería manejar aquí idealmente para tener acceso al rol actualizado.

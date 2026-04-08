@@ -149,19 +149,18 @@ export default function CatalogoProductosPage() {
     } else {
       // API integration for new products
       const payload = {
-        codigo: formData.codigo_sku,
+        codigo_sku: formData.codigo_sku,
         nombre: formData.nombre,
-        descripcion: formData.descripcion_web || formData.nombre, // Using web desc as main if available
+        precio_costo: Number(formData.precio_costo) || 0,
         precio_venta: Number(formData.precio_venta) || 0,
-        costo: Number(formData.precio_costo) || 0,
-        saldo_actual: Number(formData.stock_actual) || 0,
+        stock_actual: Number(formData.stock_actual) || 0,
         categoria: formData.categoria,
-        imagenes: formData.imagenes,
         descripcion_web: formData.descripcion_web,
         longitud: formData.longitud,
         grosor: formData.grosor,
         peso_estimado: formData.peso_estimado,
-        publicado_web: formData.publicado_web
+        publicado_web: formData.publicado_web,
+        imagenes: formData.imagenes
       };
 
       try {

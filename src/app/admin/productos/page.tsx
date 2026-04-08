@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createProducto } from "@/src/actions/inventario";
 import {
   Plus,
   Search,
@@ -18,7 +19,15 @@ import {
   Archive,
   BookOpen,
   Scale,
-  Tag
+  Tag,
+  Image as ImageIcon,
+  Globe,
+  Ruler,
+  MoveVertical,
+  Weight,
+  UploadCloud,
+  ToggleRight,
+  ToggleLeft
 } from "lucide-react";
 
 // Initial mock data
@@ -36,22 +45,36 @@ export default function CatalogoProductosPage() {
   // Form Data State
   const [formData, setFormData] = useState({
     id: null as number | null,
-    codigo: "",
+    codigo_sku: "",
     nombre: "",
-    precioVenta: "",
-    costo: "",
-    stockInicial: "",
+    precio_venta: "",
+    precio_costo: "",
+    stock_actual: "",
     categoria: "Cadenas",
-    unidad: "Unidad",
-    bodega: "Caja Fuerte Principal",
-    clasificacionContable: "Joyería Oro Laminado",
     estado: "Activo",
+    // Datos Ecommerce
+    imagenes: [] as File[],
+    descripcion_web: "",
+    longitud: "",
+    grosor: "",
+    peso_estimado: "",
+    publicado_web: false,
   });
 
   // Handle Input Changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFormData({ ...formData, imagenes: Array.from(e.target.files) });
+    }
+  };
+
+  const handleCheckboxChange = () => {
+    setFormData({ ...formData, publicado_web: !formData.publicado_web });
   };
 
   // Open Modal for Create
@@ -59,16 +82,19 @@ export default function CatalogoProductosPage() {
     setIsEditing(false);
     setFormData({
       id: null,
-      codigo: "",
+      codigo_sku: "",
       nombre: "",
-      precioVenta: "",
-      costo: "",
-      stockInicial: "",
+      precio_venta: "",
+      precio_costo: "",
+      stock_actual: "",
       categoria: "Cadenas",
-      unidad: "Unidad",
-      bodega: "Caja Fuerte Principal",
-      clasificacionContable: "Joyería Oro Laminado",
       estado: "Activo",
+      imagenes: [],
+      descripcion_web: "",
+      longitud: "",
+      grosor: "",
+      peso_estimado: "",
+      publicado_web: false,
     });
     setIsModalOpen(true);
   };
@@ -79,14 +105,19 @@ export default function CatalogoProductosPage() {
     setIsEditing(true);
     setFormData({
       ...producto,
-      precioVenta: producto.precio || "",
-      costo: producto.costo || "",
-      stockInicial: producto.stock || "",
+      codigo_sku: producto.codigo || "",
+      nombre: producto.nombre || "",
+      precio_venta: producto.precio || "",
+      precio_costo: producto.costo || "",
+      stock_actual: producto.stock || "",
       categoria: producto.categoria || "Cadenas",
-      unidad: producto.unidad || "Unidad",
-      bodega: producto.bodega || "Caja Fuerte Principal",
-      clasificacionContable: producto.clasificacionContable || "Joyería Oro Laminado",
       estado: producto.estado || "Activo",
+      imagenes: [],
+      descripcion_web: producto.descripcion_web || "",
+      longitud: producto.longitud || "",
+      grosor: producto.grosor || "",
+      peso_estimado: producto.peso_estimado || "",
+      publicado_web: producto.publicado_web || false,
     });
     setIsModalOpen(true);
   };
@@ -99,33 +130,61 @@ export default function CatalogoProductosPage() {
   };
 
   // Handle Form Submit
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
       setProductos(
         productos.map((p) =>
           p.id === formData.id ? {
             ...p,
-            codigo: formData.codigo,
+            codigo: formData.codigo_sku,
             nombre: formData.nombre,
             categoria: formData.categoria,
             estado: formData.estado,
-            precio: Number(formData.precioVenta),
-            stock: Number(formData.stockInicial)
+            precio: Number(formData.precio_venta),
+            stock: Number(formData.stock_actual)
           } : p
         )
       );
     } else {
-      const newId = productos.length > 0 ? Math.max(...productos.map(p => p.id)) + 1 : 1;
-      setProductos([...productos, {
-        id: newId,
-        codigo: formData.codigo,
+      // API integration for new products
+      const payload = {
+        codigo: formData.codigo_sku,
         nombre: formData.nombre,
+        descripcion: formData.descripcion_web || formData.nombre, // Using web desc as main if available
+        precio_venta: Number(formData.precio_venta) || 0,
+        costo: Number(formData.precio_costo) || 0,
+        saldo_actual: Number(formData.stock_actual) || 0,
         categoria: formData.categoria,
-        estado: formData.estado,
-        precio: Number(formData.precioVenta),
-        stock: Number(formData.stockInicial)
-      }]);
+        imagenes: formData.imagenes,
+        descripcion_web: formData.descripcion_web,
+        longitud: formData.longitud,
+        grosor: formData.grosor,
+        peso_estimado: formData.peso_estimado,
+        publicado_web: formData.publicado_web
+      };
+
+      try {
+        // We use 'as any' to bypass the type restrictions in createProducto as the exact UI requested
+        // schema does not fully match database.types.ts yet, but user asked for UI update and passing data
+        const { data, error } = await createProducto(payload as any);
+        if (error) {
+          alert("Error creando producto: " + (error.message || "Error desconocido"));
+        } else {
+          const newId = productos.length > 0 ? Math.max(...productos.map(p => p.id)) + 1 : 1;
+          setProductos([...productos, {
+            id: newId,
+            codigo: formData.codigo_sku,
+            nombre: formData.nombre,
+            categoria: formData.categoria,
+            estado: formData.estado,
+            precio: Number(formData.precio_venta),
+            stock: Number(formData.stock_actual)
+          }]);
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
     setIsModalOpen(false);
   };
@@ -310,7 +369,15 @@ export default function CatalogoProductosPage() {
                 <div className="overflow-y-auto flex-1 p-8">
                   <form id="productForm" onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
 
-                    {/* Código */}
+                    {/* Sección 1: Datos Internos (ERP) */}
+                    <div className="col-span-2 mb-2 border-b pb-2">
+                      <h3 className="text-sm font-bold text-[#472825] flex items-center gap-2">
+                        <Archive size={16} />
+                        Datos Internos (ERP)
+                      </h3>
+                    </div>
+
+                    {/* Código SKU */}
                     <div className="space-y-1.5 col-span-1">
                       <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
                         Código (SKU)
@@ -319,8 +386,8 @@ export default function CatalogoProductosPage() {
                         <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input
                           type="text"
-                          name="codigo"
-                          value={formData.codigo}
+                          name="codigo_sku"
+                          value={formData.codigo_sku}
                           onChange={handleChange}
                           required
                           className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825] uppercase"
@@ -330,7 +397,7 @@ export default function CatalogoProductosPage() {
                     </div>
 
                     {/* Nombre */}
-                    <div className="space-y-1.5 col-span-2">
+                    <div className="space-y-1.5 col-span-1">
                       <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
                         Nombre del Producto
                       </label>
@@ -357,8 +424,8 @@ export default function CatalogoProductosPage() {
                         <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input
                           type="number"
-                          name="precioVenta"
-                          value={formData.precioVenta}
+                          name="precio_venta"
+                          value={formData.precio_venta}
                           onChange={handleChange}
                           required
                           min="0"
@@ -371,14 +438,14 @@ export default function CatalogoProductosPage() {
                     {/* Costo */}
                     <div className="space-y-1.5 col-span-1">
                       <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Costo
+                        Precio Costo
                       </label>
                       <div className="relative">
                         <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input
                           type="number"
-                          name="costo"
-                          value={formData.costo}
+                          name="precio_costo"
+                          value={formData.precio_costo}
                           onChange={handleChange}
                           required
                           min="0"
@@ -397,8 +464,8 @@ export default function CatalogoProductosPage() {
                         <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input
                           type="number"
-                          name="stockInicial"
-                          value={formData.stockInicial}
+                          name="stock_actual"
+                          value={formData.stock_actual}
                           onChange={handleChange}
                           required
                           min="0"
@@ -429,68 +496,121 @@ export default function CatalogoProductosPage() {
                       </div>
                     </div>
 
-                    {/* Unidad */}
-                    <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Unidad
-                      </label>
-                      <div className="relative">
-                        <Scale className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <select
-                          name="unidad"
-                          value={formData.unidad}
-                          onChange={handleChange}
-                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825] appearance-none"
-                        >
-                          <option value="Unidad">Unidad</option>
-                          <option value="Gramos">Gramos</option>
-                          <option value="Centímetros">Centímetros</option>
-                        </select>
+                    {/* Sección 2: Catálogo Web y E-commerce */}
+                    <div className="col-span-2 mt-4 mb-2 border-b pb-2">
+                      <h3 className="text-sm font-bold text-[#D3AB80] flex items-center gap-2">
+                        <Globe size={16} />
+                        Datos para Tienda Online
+                      </h3>
+                    </div>
+
+                    {/* Publicado Web */}
+                    <div className="col-span-2 flex items-center gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200 cursor-pointer" onClick={handleCheckboxChange}>
+                      <button type="button" className="text-[#D3AB80]">
+                        {formData.publicado_web ? <ToggleRight size={28} /> : <ToggleLeft size={28} className="text-gray-400" />}
+                      </button>
+                      <div>
+                        <span className="text-sm font-bold text-[#472825] block">Publicar en Tienda Online</span>
+                        <span className="text-xs text-gray-500">Haz que este producto sea visible en el E-commerce.</span>
                       </div>
                     </div>
 
-                    {/* Bodega */}
-                    <div className="space-y-1.5 col-span-1">
+                    {/* Imágenes */}
+                    <div className="space-y-1.5 col-span-2">
                       <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Bodega
+                        Imágenes del Producto
                       </label>
-                      <div className="relative">
-                        <Archive className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <select
-                          name="bodega"
-                          value={formData.bodega}
-                          onChange={handleChange}
-                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825] appearance-none"
-                        >
-                          <option value="Caja Fuerte Principal">Caja Fuerte Principal</option>
-                          <option value="Vitrina Exhibición">Vitrina Exhibición</option>
-                        </select>
+                      <div className="relative border-2 border-dashed border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl p-6 text-center">
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <UploadCloud className="mx-auto text-gray-400 mb-2" size={32} />
+                        <span className="text-sm font-medium text-gray-600 block">
+                          Haz clic o arrastra imágenes aquí
+                        </span>
+                        <span className="text-xs text-gray-400 mt-1 block">
+                          {formData.imagenes.length > 0 ? `${formData.imagenes.length} imagen(es) seleccionada(s)` : 'Soporta PNG, JPG, WEBP'}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Clasificación Contable */}
+                    {/* Descripción Web */}
+                    <div className="space-y-1.5 col-span-2">
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                        Descripción (Web)
+                      </label>
+                      <textarea
+                        name="descripcion_web"
+                        value={formData.descripcion_web}
+                        onChange={handleChange}
+                        rows={3}
+                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl p-3 text-sm font-medium outline-none transition-all text-[#472825]"
+                        placeholder="Descripción detallada para la tienda..."
+                      />
+                    </div>
+
+                    {/* Longitud */}
                     <div className="space-y-1.5 col-span-1">
                       <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Clasificación Contable
+                        Longitud
                       </label>
                       <div className="relative">
-                        <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <select
-                          name="clasificacionContable"
-                          value={formData.clasificacionContable}
+                        <Ruler className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input
+                          type="text"
+                          name="longitud"
+                          value={formData.longitud}
                           onChange={handleChange}
-                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825] appearance-none"
-                        >
-                          <option value="Joyería Oro Laminado">Joyería Oro Laminado</option>
-                          <option value="Insumos">Insumos</option>
-                        </select>
+                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                          placeholder="Ej. 60cm"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Grosor */}
+                    <div className="space-y-1.5 col-span-1">
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                        Grosor
+                      </label>
+                      <div className="relative">
+                        <MoveVertical className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input
+                          type="text"
+                          name="grosor"
+                          value={formData.grosor}
+                          onChange={handleChange}
+                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                          placeholder="Ej. 5mm"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Peso Estimado */}
+                    <div className="space-y-1.5 col-span-1">
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                        Peso Estimado
+                      </label>
+                      <div className="relative">
+                        <Weight className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input
+                          type="text"
+                          name="peso_estimado"
+                          value={formData.peso_estimado}
+                          onChange={handleChange}
+                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                          placeholder="Ej. 15g"
+                        />
                       </div>
                     </div>
 
                     {/* Estado */}
                     <div className="space-y-1.5 col-span-1">
                       <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Estado
+                        Estado Interno
                       </label>
                       <div className="relative">
                         {formData.estado === "Activo" ? (

@@ -148,26 +148,28 @@ export default function CatalogoProductosPage() {
       );
     } else {
       // API integration for new products
-      const payload = {
-        codigo_sku: formData.codigo_sku,
-        nombre: formData.nombre,
-        precio_costo: Number(formData.precio_costo) || 0,
-        precio_venta: Number(formData.precio_venta) || 0,
-        stock_actual: Number(formData.stock_actual) || 0,
-        categoria: formData.categoria,
-        descripcion_web: formData.descripcion_web,
-        longitud: formData.longitud,
-        grosor: formData.grosor,
-        peso_estimado: formData.peso_estimado,
-        publicado_web: formData.publicado_web,
-        imagenes: formData.imagenes
-      };
+      const fd = new FormData();
+      fd.append('codigo_sku', formData.codigo_sku);
+      fd.append('nombre', formData.nombre);
+      fd.append('precio_costo', (Number(formData.precio_costo) || 0).toString());
+      fd.append('precio_venta', (Number(formData.precio_venta) || 0).toString());
+      fd.append('stock_actual', (Number(formData.stock_actual) || 0).toString());
+      fd.append('categoria', formData.categoria);
+      fd.append('descripcion_web', formData.descripcion_web);
+      fd.append('longitud', formData.longitud);
+      fd.append('grosor', formData.grosor);
+      fd.append('peso_estimado', formData.peso_estimado);
+      fd.append('publicado_web', formData.publicado_web.toString());
+
+      if (formData.imagenes && formData.imagenes.length > 0) {
+        formData.imagenes.forEach(img => fd.append('imagen', img));
+      }
 
       try {
         // We use 'as any' to bypass the type restrictions in createProducto as the exact UI requested
         // schema does not fully match database.types.ts yet, but user asked for UI update and passing data
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await createProducto(payload as any);
+        const { error } = await createProducto(fd as any);
         if (error) {
           alert("Error creando producto: " + (error.message || "Error desconocido"));
         } else {

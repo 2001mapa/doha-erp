@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Search, User, ShoppingBag, Eye, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { useCart } from "../context/CartContext";
 import { supabase } from "@/src/lib/supabaseClient";
 
@@ -117,11 +118,12 @@ export default function HomePage() {
           {products.map((product) => (
             <div key={product.id} className="group cursor-pointer flex flex-col" onClick={() => openProduct(product)}>
               <div className="relative aspect-[4/5] overflow-hidden bg-gray-100 rounded-2xl mb-4">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={product.image}
                   alt={product.name}
-                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-in-out"
+                  fill
+                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
                 />
                 <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                   <div className="bg-white/90 backdrop-blur-sm p-3 rounded-full text-[#472825] shadow-lg">
@@ -216,11 +218,12 @@ export default function HomePage() {
 
                 <div className="overflow-y-auto hide-scrollbar flex-1 pb-20">
                   <div className="relative aspect-square bg-gray-100 w-full">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src={selectedProduct.image}
                       alt={selectedProduct.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 400px"
+                      className="object-cover"
                     />
                   </div>
 

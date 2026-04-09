@@ -1,0 +1,14 @@
+
+> doha-erp@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+- Environments: .env.local
+✓ Ready in 510ms
+
+○ Compiling / ...
+ GET / 200 in 5.0s (next.js: 4.6s, application-code: 443ms)
+⨯ upstream image response failed for https://images.unsplash.com/photo-1599643478514-4a820cbf311e?w=400 404
+⨯ upstream image response failed for https://images.unsplash.com/photo-1599643478514-4a820cbf311e?w=400 404

@@ -67,7 +67,7 @@ export default function HomePage() {
         atributo: `Talla: ${selectedSize}`,
         precio: selectedProduct.precio_venta || 0,
         cantidad: quantity,
-        imagen: selectedProduct.imagenes?.[0] || 'https://images.unsplash.com/photo-1599643478514-4a820cbf311e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        imagen: selectedProduct.imagenes?.[0]?.startsWith('http') ? selectedProduct.imagenes[0] : 'https://images.unsplash.com/photo-1599643478514-4a820cbf311e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
       });
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
@@ -108,7 +108,7 @@ export default function HomePage() {
           {products.map((product) => (
             <div key={product.id} className="group cursor-pointer flex flex-col" onClick={() => openProduct(product)}>
               <div className="relative aspect-[4/5] overflow-hidden bg-gray-100 rounded-2xl mb-4">
-                {product.imagenes && product.imagenes.length > 0 ? (
+                {product.imagenes && product.imagenes[0] && product.imagenes[0].startsWith('http') ? (
                   <Image
                     src={product.imagenes[0]}
                     alt={product.nombre || product.descripcion || 'Producto'}
@@ -216,7 +216,7 @@ export default function HomePage() {
 
                 <div className="overflow-y-auto hide-scrollbar flex-1 pb-20">
                   <div className="relative aspect-square bg-gray-100 w-full">
-                    {selectedProduct.imagenes && selectedProduct.imagenes.length > 0 ? (
+                    {selectedProduct.imagenes && selectedProduct.imagenes[0] && selectedProduct.imagenes[0].startsWith('http') ? (
                       <Image
                         src={selectedProduct.imagenes[0]}
                         alt={selectedProduct.nombre || selectedProduct.descripcion || 'Producto'}

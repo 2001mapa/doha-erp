@@ -10,12 +10,11 @@ import { supabase } from "@/src/lib/supabaseClient";
 
 interface Product {
   id: string;
-  name: string;
-  price: string;
-  rawPrice: number;
-  image: string;
-  description: string;
-  stock: number;
+  nombre: string;
+  precio_venta: number;
+  imagenes: string[];
+  descripcion: string;
+  saldo_actual: number;
 }
 
 const CATEGORIES = [
@@ -39,16 +38,7 @@ export default function HomePage() {
         const anyErr = error as any;
         console.error("Error fetching products:", anyErr.message, anyErr.details, anyErr.hint);
       } else if (data) {
-        const mappedProducts: Product[] = data.map(p => ({
-          id: p.id,
-          name: p.nombre || p.descripcion,
-          price: `$ ${new Intl.NumberFormat('es-CO').format(p.precio_venta || 0)}`,
-          rawPrice: p.precio_venta || 0,
-          image: p.imagenes?.[0] || 'https://images.unsplash.com/photo-1599643478514-4a820cbf311e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-          description: p.descripcion,
-          stock: p.saldo_actual || 0,
-        }));
-        setProducts(mappedProducts);
+        setProducts(data as Product[]);
       }
     }
     fetchProducts();
@@ -73,11 +63,11 @@ export default function HomePage() {
         // or bypass the type here specifically to avoid breaking other parts of the UI that rely on the cart.
         // Given the isolated scope of this page, we type assert to bypass.
         id: selectedProduct.id as unknown as number,
-        nombre: selectedProduct.name,
+        nombre: selectedProduct.nombre || selectedProduct.descripcion,
         atributo: `Talla: ${selectedSize}`,
-        precio: selectedProduct.rawPrice,
+        precio: selectedProduct.precio_venta || 0,
         cantidad: quantity,
-        imagen: selectedProduct.image,
+        imagen: selectedProduct.imagenes?.[0] || 'https://images.unsplash.com/photo-1599643478514-4a820cbf311e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
       });
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
@@ -118,21 +108,29 @@ export default function HomePage() {
           {products.map((product) => (
             <div key={product.id} className="group cursor-pointer flex flex-col" onClick={() => openProduct(product)}>
               <div className="relative aspect-[4/5] overflow-hidden bg-gray-100 rounded-2xl mb-4">
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
-                />
+                {product.imagenes && product.imagenes.length > 0 ? (
+                  <Image
+                    src={product.imagenes[0]}
+                    alt={product.nombre || product.descripcion || 'Producto'}
+                    fill
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 group-hover:scale-105 transition-transform duration-700 ease-in-out">
+                    <span>Sin imagen</span>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                   <div className="bg-white/90 backdrop-blur-sm p-3 rounded-full text-[#472825] shadow-lg">
                     <Eye size={20} />
                   </div>
                 </div>
               </div>
-              <h3 className="font-medium text-sm sm:text-lg leading-tight">{product.name}</h3>
-              <p className="text-[#D3AB80] font-semibold mt-1 text-sm sm:text-base">{product.price}</p>
+              <h3 className="font-medium text-sm sm:text-lg leading-tight">{product.nombre || product.descripcion}</h3>
+              <p className="text-[#D3AB80] font-semibold mt-1 text-sm sm:text-base">
+                $ {new Intl.NumberFormat('es-CO').format(product.precio_venta || 0)}
+              </p>
             </div>
           ))}
         </section>
@@ -218,21 +216,29 @@ export default function HomePage() {
 
                 <div className="overflow-y-auto hide-scrollbar flex-1 pb-20">
                   <div className="relative aspect-square bg-gray-100 w-full">
-                    <Image
-                      src={selectedProduct.image}
-                      alt={selectedProduct.name}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 400px"
-                      className="object-cover"
-                    />
+                    {selectedProduct.imagenes && selectedProduct.imagenes.length > 0 ? (
+                      <Image
+                        src={selectedProduct.imagenes[0]}
+                        alt={selectedProduct.nombre || selectedProduct.descripcion || 'Producto'}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 400px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <span>Sin imagen</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-6">
-                    <h2 className="text-2xl font-medium text-[#472825] mb-2 font-serif leading-tight">{selectedProduct.name}</h2>
-                    <p className="text-xl text-[#D3AB80] font-semibold mb-4">{selectedProduct.price}</p>
+                    <h2 className="text-2xl font-medium text-[#472825] mb-2 font-serif leading-tight">{selectedProduct.nombre || selectedProduct.descripcion}</h2>
+                    <p className="text-xl text-[#D3AB80] font-semibold mb-4">
+                      $ {new Intl.NumberFormat('es-CO').format(selectedProduct.precio_venta || 0)}
+                    </p>
 
                     <p className="text-gray-600 text-sm leading-relaxed mb-6">
-                      {selectedProduct.description}
+                      {selectedProduct.descripcion}
                     </p>
 
                     <div className="mb-6">
@@ -264,12 +270,12 @@ export default function HomePage() {
                           >-</button>
                           <span className="w-10 text-center font-medium">{quantity}</span>
                           <button
-                            onClick={() => setQuantity(Math.min(selectedProduct.stock, quantity + 1))}
+                            onClick={() => setQuantity(Math.min(selectedProduct.saldo_actual || 0, quantity + 1))}
                             className="px-4 py-2 h-full text-gray-600 hover:bg-gray-100 transition-colors min-w-[48px] flex items-center justify-center"
                           >+</button>
                         </div>
                         <span className="text-xs text-gray-500">
-                          {selectedProduct.stock} disp.
+                          {selectedProduct.saldo_actual || 0} disp.
                         </span>
                       </div>
                     </div>

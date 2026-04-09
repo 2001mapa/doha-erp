@@ -1,0 +1,27 @@
+
+> doha-erp@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+- Environments: .env.local
+✓ Ready in 502ms
+
+○ Compiling / ...
+ GET / 200 in 5.0s (next.js: 4.6s, application-code: 411ms)
+[browser] Error fetching products: TypeError: Failed to fetch TypeError: Failed to fetch
+    at http://localhost:3000/_next/static/chunks/node_modules_0gvu9pm._.js:14406:23
+    at http://localhost:3000/_next/static/chunks/node_modules_0gvu9pm._.js:14420:16
+    at async fetchProducts (http://localhost:3000/_next/static/chunks/src_0qwniyt._.js:71:41)
+    at fetchProducts (src/app/page.tsx:39:17)
+  37 |         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  38 |         const anyErr = error as any;
+> 39 |         console.error("Error fetching products:", anyErr.message, anyErr.details, anyErr.h...
+     |                 ^
+  40 |       } else if (data) {
+  41 |         setProducts(data as Product[]);
+  42 |       } (src/app/page.tsx:39:17)
+ GET / 200 in 72ms (next.js: 5ms, application-code: 67ms)
+⨯ upstream image response failed for https://images.unsplash.com/photo-1599643478514-4a820cbf311e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80 404
+⨯ upstream image response failed for https://images.unsplash.com/photo-1599643478514-4a820cbf311e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80 404

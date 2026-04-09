@@ -24,11 +24,52 @@ export async function getBodegas(): Promise<{ data: Bodega[] | null; error: any 
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createProducto(data: Omit<Producto, 'id' | 'estado' | 'created_at'>): Promise<{ data: Producto | null; error: any }> {
+export async function createProducto(data: Omit<Producto, 'id' | 'estado' | 'created_at'> & { imagenes?: any[] }): Promise<{ data: Producto | null; error: any }> {
   try {
+    // Manejar la subida de imagenes si existen
+    const payload = { ...data };
+
+    if (payload.imagenes && Array.isArray(payload.imagenes) && payload.imagenes.length > 0) {
+      const publicUrls = [];
+      for (const file of payload.imagenes) {
+        if (typeof file === 'object' && file !== null && 'arrayBuffer' in file) {
+          try {
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('productos_imagenes')
+              .upload(`productos/${fileName}`, buffer, {
+                contentType: file.type || 'image/jpeg',
+                upsert: false
+              });
+
+            if (uploadError) {
+              console.error('Error subiendo imagen:', { message: uploadError.message, details: uploadError.name });
+            } else if (uploadData) {
+              const { data: publicUrlData } = supabase.storage
+                .from('productos_imagenes')
+                .getPublicUrl(`productos/${fileName}`);
+
+              if (publicUrlData && publicUrlData.publicUrl) {
+                publicUrls.push(publicUrlData.publicUrl);
+              }
+            }
+          } catch (uploadErr) {
+            console.error('Error procesando imagen para subida:', uploadErr);
+          }
+        } else if (typeof file === 'string') {
+          // If it's already a URL string
+          publicUrls.push(file);
+        }
+      }
+      payload.imagenes = publicUrls;
+    }
+
     const { data: result, error } = await supabase
       .from('productos')
-      .insert([data])
+      .insert([payload])
       .select()
       .single();
 

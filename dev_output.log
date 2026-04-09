@@ -5,75 +5,24 @@
 ▲ Next.js 16.2.1 (Turbopack)
 - Local:         http://localhost:3000
 - Network:       http://192.168.0.2:3000
-✓ Ready in 533ms
+- Environments: .env.local
+✓ Ready in 535ms
 
-○ Compiling /admin/login ...
- GET /admin/login 200 in 3.8s (next.js: 3.5s, application-code: 353ms)
- GET /admin 200 in 562ms (next.js: 509ms, application-code: 52ms)
- GET /admin/login 200 in 113ms (next.js: 7ms, application-code: 106ms)
- GET /admin 200 in 31ms (next.js: 4ms, application-code: 27ms)
- GET /admin/login 200 in 68ms (next.js: 4ms, application-code: 64ms)
- GET /admin 200 in 31ms (next.js: 4ms, application-code: 28ms)
- GET /admin/inventario/unidades 200 in 2.2s (next.js: 2.1s, application-code: 42ms)
-⨯ Error: supabaseUrl is required.
-    at module evaluation (src/lib/supabaseClient.ts:6:37)
-    at module evaluation (src/actions/inventario.ts:3:1)
-    at module evaluation (.next-internal/server/app/admin/inventario/unidades/page/actions.js (server actions loader):1:1)
-    at module evaluation (.next/dev/server/chunks/ssr/_10z.j02._.js:153:394)
-  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  5 |
-> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    |                                     ^
-  7 | {
-  digest: '4002205756'
-}
- POST /admin/inventario/unidades 500 in 825ms (next.js: 4ms, application-code: 822ms)
- GET /admin/login 200 in 65ms (next.js: 5ms, application-code: 60ms)
- GET /admin 200 in 34ms (next.js: 4ms, application-code: 30ms)
- GET /admin/inventario/unidades 200 in 29ms (next.js: 3ms, application-code: 26ms)
-⨯ Error: supabaseUrl is required.
-    at module evaluation (src/lib/supabaseClient.ts:6:37)
-    at module evaluation (src/actions/inventario.ts:3:1)
-    at module evaluation (.next-internal/server/app/admin/inventario/unidades/page/actions.js (server actions loader):1:1)
-    at module evaluation (.next/dev/server/chunks/ssr/_10z.j02._.js:153:394)
-  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  5 |
-> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    |                                     ^
-  7 | {
-  digest: '4002205756'
-}
- POST /admin/inventario/unidades 500 in 520ms (next.js: 3ms, application-code: 517ms)
-⨯ Error: supabaseUrl is required.
-    at module evaluation (src/lib/supabaseClient.ts:6:37)
-    at module evaluation (src/actions/inventario.ts:3:1)
-    at module evaluation (.next-internal/server/app/admin/inventario/unidades/page/actions.js (server actions loader):1:1)
-    at module evaluation (.next/dev/server/chunks/ssr/_10z.j02._.js:153:394)
-  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  5 |
-> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    |                                     ^
-  7 | {
-  digest: '4002205756'
-}
- POST /admin/inventario/unidades 500 in 464ms (next.js: 3ms, application-code: 461ms)
-[browser] ⨯ unhandledRejection: Error: supabaseUrl is required.
-    at module evaluation (src/lib/supabaseClient.ts:6:37)
-    at module evaluation (src/actions/inventario.ts:3:1)
-    at module evaluation (.next-internal/server/app/admin/inventario/unidades/page/actions.js (server actions loader):1:1)
-    at module evaluation (about://React/Server/file:///app/.next/dev/server/chunks/ssr/_10z.j02._.js?13:153:394)
-  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  5 |
-> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    |                                     ^
-  7 |
-[browser] ⨯ unhandledRejection: Error: supabaseUrl is required.
-    at module evaluation (src/lib/supabaseClient.ts:6:37)
-    at module evaluation (src/actions/inventario.ts:3:1)
-    at module evaluation (.next-internal/server/app/admin/inventario/unidades/page/actions.js (server actions loader):1:1)
-    at module evaluation (about://React/Server/file:///app/.next/dev/server/chunks/ssr/_10z.j02._.js?13:153:394)
-  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  5 |
-> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    |                                     ^
-  7 |
+○ Compiling / ...
+ GET / 200 in 5.1s (next.js: 4.7s, application-code: 422ms)
+[browser] Error fetching products: TypeError: Failed to fetch TypeError: Failed to fetch
+    at http://localhost:3000/_next/static/chunks/node_modules_0gvu9pm._.js:14406:23
+    at http://localhost:3000/_next/static/chunks/node_modules_0gvu9pm._.js:14420:16
+    at async fetchProducts (http://localhost:3000/_next/static/chunks/src_0qwniyt._.js:71:41)
+    at fetchProducts (src/app/page.tsx:40:17)
+  38 |         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  39 |         const anyErr = error as any;
+> 40 |         console.error("Error fetching products:", anyErr.message, anyErr.details, anyErr.h...
+     |                 ^
+  41 |       } else if (data) {
+  42 |         const mappedProducts: Product[] = data.map(p => ({
+  43 |           id: p.id, (src/app/page.tsx:40:17)
+ GET / 200 in 69ms (next.js: 5ms, application-code: 64ms)
+⨯ upstream image response failed for https://images.unsplash.com/photo-1605100804763-247f67b2548e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80 404
+⨯ upstream image response failed for https://images.unsplash.com/photo-1599643478514-4a820cbf311e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80 404
+⨯ upstream image response failed for https://images.unsplash.com/photo-1599643478514-4a820cbf311e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80 404

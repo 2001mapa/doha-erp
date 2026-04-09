@@ -166,7 +166,8 @@ export default function CatalogoProductosPage() {
       try {
         // We use 'as any' to bypass the type restrictions in createProducto as the exact UI requested
         // schema does not fully match database.types.ts yet, but user asked for UI update and passing data
-        const { data, error } = await createProducto(payload as any);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await createProducto(payload as any);
         if (error) {
           alert("Error creando producto: " + (error.message || "Error desconocido"));
         } else {

@@ -122,18 +122,30 @@ export async function createProducto(input: any): Promise<{ data: Producto | nul
 }
 
 export interface ProductoFiltros {
+  codigo?: string;
   ref_fabrica?: string;
   descripcion?: string;
   bodega_id?: string;
 }
 
-export async function getProductos(): Promise<{ data: any[] | null; error: string | null }> {
+export async function getProductos(filtros?: ProductoFiltros): Promise<{ data: any[] | null; error: string | null }> {
   try {
-    // Buscamos todos los productos y los ordenamos por la columna real: 'nombre'
-    const { data, error } = await supabase
-      .from('productos')
-      .select('*')
-      .order('nombre');
+    let query = supabase.from('productos').select('*');
+
+    if (filtros?.codigo) {
+      query = query.ilike('codigo_sku', `%${filtros.codigo}%`);
+    }
+    if (filtros?.ref_fabrica) {
+      query = query.ilike('ref_fabrica', `%${filtros.ref_fabrica}%`);
+    }
+    if (filtros?.descripcion) {
+      query = query.ilike('nombre', `%${filtros.descripcion}%`);
+    }
+    if (filtros?.bodega_id) {
+      query = query.eq('bodega_id', filtros.bodega_id);
+    }
+
+    const { data, error } = await query.order('nombre', { ascending: true });
 
     if (error) {
       // Extraemos solo el mensaje de texto para que Next.js no colapse al enviarlo al cliente

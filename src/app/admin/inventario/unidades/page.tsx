@@ -86,7 +86,7 @@ export default function UnidadesPage() {
     try {
       const { data, error } = await createProducto(newProductData);
       if (error) {
-        alert("Error creando producto: " + (error.message || "Error desconocido"));
+        alert("Error creando producto: " + error);
       } else if (data) {
         setShowNewProductModal(false);
         setNewProductData({

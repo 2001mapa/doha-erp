@@ -24,7 +24,7 @@ export async function getBodegas(): Promise<{ data: Bodega[] | null; error: any 
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createProducto(input: any): Promise<{ data: Producto | null; error: any }> {
+export async function createProducto(input: any): Promise<{ data: Producto | null; error: string | null }> {
   try {
     let payload: any = {};
     let imageFiles: File[] = [];
@@ -108,14 +108,16 @@ export async function createProducto(input: any): Promise<{ data: Producto | nul
       .single();
 
     if (error) {
-      console.error('Error in createProducto:', { message: error.message, details: error.details, hint: error.hint });
-      return { data: null, error };
+      // Extraemos solo el mensaje de texto para evitar el colapso de Next.js
+      console.error('Error de Supabase al crear:', error.message);
+      return { data: null, error: error.message };
     }
 
     return { data: result, error: null };
-  } catch (err) {
-    console.error('Unexpected error in createProducto:', err);
-    return { data: null, error: err };
+  } catch (err: any) {
+    // Extraemos solo el mensaje de texto del error inesperado
+    console.error('Error inesperado en createProducto:', err);
+    return { data: null, error: err.message || 'Error desconocido' };
   }
 }
 
@@ -125,33 +127,64 @@ export interface ProductoFiltros {
   bodega_id?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getProductos(filtros?: ProductoFiltros): Promise<{ data: Producto[] | null; error: any }> {
+export async function getProductos(): Promise<{ data: any[] | null; error: string | null }> {
   try {
-    let query = supabase.from('productos').select('*');
-
-    if (filtros) {
-      if (filtros.ref_fabrica) {
-        query = query.ilike('ref_fabrica', `%${filtros.ref_fabrica}%`);
-      }
-      if (filtros.descripcion) {
-        query = query.ilike('descripcion', `%${filtros.descripcion}%`);
-      }
-      if (filtros.bodega_id) {
-        query = query.eq('bodega_id', filtros.bodega_id);
-      }
-    }
-
-    const { data, error } = await query.order('descripcion');
+    // Buscamos todos los productos y los ordenamos por la columna real: 'nombre'
+    const { data, error } = await supabase
+      .from('productos')
+      .select('*')
+      .order('nombre');
 
     if (error) {
-      console.error('Error in getProductos:', { message: error.message, details: error.details, hint: error.hint });
-      return { data: null, error };
+      // Extraemos solo el mensaje de texto para que Next.js no colapse al enviarlo al cliente
+      console.error('Error de Supabase:', error.message);
+      return { data: null, error: error.message };
     }
 
     return { data, error: null };
-  } catch (err) {
-    console.error('Unexpected error in getProductos:', err);
-    return { data: null, error: err };
+  } catch (err: any) {
+    console.error('Error inesperado en getProductos:', err);
+    return { data: null, error: err.message || 'Error desconocido' };
+  }
+}
+// FUNCIÓN PARA ELIMINAR
+export async function deleteProducto(id: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from('productos')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error al eliminar en Supabase:', error.message);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, error: null };
+  } catch (err: any) {
+    console.error('Error inesperado al eliminar:', err);
+    return { success: false, error: err.message || 'Error desconocido' };
+  }
+}
+
+// FUNCIÓN PARA EDITAR
+export async function updateProducto(id: string, updates: any): Promise<{ data: any | null; error: string | null }> {
+  try {
+    const { data, error } = await supabase
+      .from('productos')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error al editar en Supabase:', error.message);
+      return { data: null, error: error.message };
+    }
+
+    return { data, error: null };
+  } catch (err: any) {
+    console.error('Error inesperado al editar:', err);
+    return { data: null, error: err.message || 'Error desconocido' };
   }
 }

@@ -1,8 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createProducto } from "@/src/actions/inventario";
+import {
+  createProducto,
+  getProductos,
+  deleteProducto,
+  updateProducto,
+} from "@/src/actions/inventario";
 import {
   Plus,
   Search,
@@ -27,24 +32,18 @@ import {
   Weight,
   UploadCloud,
   ToggleRight,
-  ToggleLeft
+  ToggleLeft,
 } from "lucide-react";
 
-// Initial mock data
-const mockData = [
-  { id: 1, codigo: "CAD-MON-01", nombre: "Cadena Mónaco 3mm", precio: 120000, stock: 15, categoria: "Cadenas", estado: "Activo" },
-  { id: 2, codigo: "PUL-ESC-02", nombre: "Pulsera Esclava", precio: 85000, stock: 8, categoria: "Pulseras", estado: "Activo" }
-];
-
 export default function CatalogoProductosPage() {
-  const [productos, setProductos] = useState(mockData);
+  const [productos, setProductos] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   // Form Data State
   const [formData, setFormData] = useState({
-    id: null as number | null,
+    id: null as any,
     codigo_sku: "",
     nombre: "",
     precio_venta: "",
@@ -52,7 +51,6 @@ export default function CatalogoProductosPage() {
     stock_actual: "",
     categoria: "Cadenas",
     estado: "Activo",
-    // Datos Ecommerce
     imagenes: [] as File[],
     descripcion_web: "",
     longitud: "",
@@ -61,8 +59,36 @@ export default function CatalogoProductosPage() {
     publicado_web: false,
   });
 
-  // Handle Input Changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const cargarInventario = async () => {
+    const { data, error } = await getProductos();
+
+    if (error) {
+      console.error("Error al leer Supabase:", error);
+    } else if (data) {
+      const joyasReales = data.map((joya: any) => ({
+        ...joya,
+        id: joya.id,
+        codigo: joya.codigo_sku,
+        nombre: joya.nombre,
+        categoria: joya.categoria,
+        precio: joya.precio_venta,
+        costo: joya.precio_costo,
+        stock: joya.stock_actual,
+        estado: joya.publicado_web ? "Activo" : "Inactivo",
+      }));
+      setProductos(joyasReales);
+    }
+  };
+
+  useEffect(() => {
+    cargarInventario();
+  }, []);
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
+  ) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
@@ -77,7 +103,6 @@ export default function CatalogoProductosPage() {
     setFormData({ ...formData, publicado_web: !formData.publicado_web });
   };
 
-  // Open Modal for Create
   const handleOpenCreate = () => {
     setIsEditing(false);
     setFormData({
@@ -99,8 +124,6 @@ export default function CatalogoProductosPage() {
     setIsModalOpen(true);
   };
 
-  // Open Modal for Edit
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleOpenEdit = (producto: any) => {
     setIsEditing(true);
     setFormData({
@@ -122,88 +145,92 @@ export default function CatalogoProductosPage() {
     setIsModalOpen(true);
   };
 
-  // Delete Item
-  const handleDelete = (id: number) => {
+  // --- ELIMINAR CONECTADO ---
+  const handleDelete = async (id: any) => {
     if (confirm("¿Estás seguro de que deseas eliminar este producto?")) {
-      setProductos(productos.filter((p) => p.id !== id));
+      const { success, error } = await deleteProducto(id);
+      if (success) {
+        await cargarInventario();
+      } else {
+        alert("Error al eliminar: " + error);
+      }
     }
   };
 
-  // Handle Form Submit
+  // --- SUBMIT CONECTADO ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (isEditing) {
-      setProductos(
-        productos.map((p) =>
-          p.id === formData.id ? {
-            ...p,
-            codigo: formData.codigo_sku,
-            nombre: formData.nombre,
-            categoria: formData.categoria,
-            estado: formData.estado,
-            precio: Number(formData.precio_venta),
-            stock: Number(formData.stock_actual)
-          } : p
-        )
-      );
+      const updates = {
+        codigo_sku: formData.codigo_sku,
+        nombre: formData.nombre,
+        precio_venta: Number(formData.precio_venta),
+        precio_costo: Number(formData.precio_costo),
+        stock_actual: Number(formData.stock_actual),
+        categoria: formData.categoria,
+        descripcion_web: formData.descripcion_web,
+        longitud: formData.longitud,
+        grosor: formData.grosor,
+        peso_estimado: formData.peso_estimado,
+        publicado_web: formData.publicado_web,
+      };
+
+      const { error } = await updateProducto(formData.id, updates);
+      if (error) {
+        alert("Error al editar: " + error);
+      } else {
+        await cargarInventario();
+        setIsModalOpen(false);
+      }
     } else {
-      // API integration for new products
       const fd = new FormData();
-      fd.append('codigo_sku', formData.codigo_sku);
-      fd.append('nombre', formData.nombre);
-      fd.append('precio_costo', (Number(formData.precio_costo) || 0).toString());
-      fd.append('precio_venta', (Number(formData.precio_venta) || 0).toString());
-      fd.append('stock_actual', (Number(formData.stock_actual) || 0).toString());
-      fd.append('categoria', formData.categoria);
-      fd.append('descripcion_web', formData.descripcion_web);
-      fd.append('longitud', formData.longitud);
-      fd.append('grosor', formData.grosor);
-      fd.append('peso_estimado', formData.peso_estimado);
-      fd.append('publicado_web', formData.publicado_web.toString());
+      fd.append("codigo_sku", formData.codigo_sku);
+      fd.append("nombre", formData.nombre);
+      fd.append(
+        "precio_costo",
+        (Number(formData.precio_costo) || 0).toString(),
+      );
+      fd.append(
+        "precio_venta",
+        (Number(formData.precio_venta) || 0).toString(),
+      );
+      fd.append(
+        "stock_actual",
+        (Number(formData.stock_actual) || 0).toString(),
+      );
+      fd.append("categoria", formData.categoria);
+      fd.append("descripcion_web", formData.descripcion_web);
+      fd.append("longitud", formData.longitud);
+      fd.append("grosor", formData.grosor);
+      fd.append("peso_estimado", formData.peso_estimado);
+      fd.append("publicado_web", formData.publicado_web.toString());
 
       if (formData.imagenes && formData.imagenes.length > 0) {
-        formData.imagenes.forEach(img => fd.append('imagen', img));
+        formData.imagenes.forEach((img) => fd.append("imagen", img));
       }
 
-      try {
-        // We use 'as any' to bypass the type restrictions in createProducto as the exact UI requested
-        // schema does not fully match database.types.ts yet, but user asked for UI update and passing data
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await createProducto(fd as any);
-        if (error) {
-          alert("Error creando producto: " + (error.message || "Error desconocido"));
-        } else {
-          const newId = productos.length > 0 ? Math.max(...productos.map(p => p.id)) + 1 : 1;
-          setProductos([...productos, {
-            id: newId,
-            codigo: formData.codigo_sku,
-            nombre: formData.nombre,
-            categoria: formData.categoria,
-            estado: formData.estado,
-            precio: Number(formData.precio_venta),
-            stock: Number(formData.stock_actual)
-          }]);
-        }
-      } catch (err) {
-        console.error(err);
+      const { error } = await createProducto(fd as any);
+      if (error) {
+        alert("Error creando producto: " + error);
+      } else {
+        await cargarInventario();
+        setIsModalOpen(false);
       }
     }
-    setIsModalOpen(false);
   };
 
-  // Filter Data
   const productosFiltrados = useMemo(() => {
     return productos.filter(
       (p) =>
         p.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+        p.nombre.toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [productos, searchTerm]);
 
   return (
     <div className="min-h-screen bg-[#fdfbf9] p-4 md:p-8 font-sans">
       <div className="max-w-6xl mx-auto w-full space-y-6">
-
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -218,7 +245,10 @@ export default function CatalogoProductosPage() {
             onClick={handleOpenCreate}
             className="group flex items-center gap-2 bg-[#472825] text-white px-5 py-2.5 rounded-2xl text-sm font-bold hover:bg-black transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
           >
-            <Plus size={18} className="group-hover:rotate-90 transition-transform" />
+            <Plus
+              size={18}
+              className="group-hover:rotate-90 transition-transform"
+            />
             Nuevo Producto
           </button>
         </div>
@@ -246,19 +276,36 @@ export default function CatalogoProductosPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50/50 border-b border-gray-100">
-                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider">Código (SKU)</th>
-                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider w-1/3">Nombre del Producto</th>
-                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider">Categoría</th>
-                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider text-right">Stock</th>
-                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider text-right">Precio de Venta</th>
-                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider">Estado</th>
-                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider text-center">Acciones</th>
+                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider">
+                    Código (SKU)
+                  </th>
+                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider w-1/3">
+                    Nombre del Producto
+                  </th>
+                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider">
+                    Categoría
+                  </th>
+                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider text-right">
+                    Stock
+                  </th>
+                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider text-right">
+                    Precio de Venta
+                  </th>
+                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider">
+                    Estado
+                  </th>
+                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider text-center">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {productosFiltrados.length > 0 ? (
                   productosFiltrados.map((producto) => (
-                    <tr key={producto.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={producto.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
                       <td className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-[#D3AB80]/20 flex items-center justify-center text-[#472825] shrink-0">
@@ -297,7 +344,11 @@ export default function CatalogoProductosPage() {
                               : "bg-red-50 text-red-700 border border-red-200"
                           }`}
                         >
-                          {producto.estado === "Activo" ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                          {producto.estado === "Activo" ? (
+                            <CheckCircle2 size={14} />
+                          ) : (
+                            <XCircle size={14} />
+                          )}
                           {producto.estado}
                         </span>
                       </td>
@@ -323,7 +374,10 @@ export default function CatalogoProductosPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-gray-500 font-medium">
+                    <td
+                      colSpan={7}
+                      className="p-8 text-center text-gray-500 font-medium"
+                    >
                       No se encontraron productos.
                     </td>
                   </tr>
@@ -354,7 +408,9 @@ export default function CatalogoProductosPage() {
                 <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0">
                   <div>
                     <h2 className="text-xl font-black text-[#472825]">
-                      {isEditing ? "Editar Producto" : "Registrar Nuevo Producto"}
+                      {isEditing
+                        ? "Editar Producto"
+                        : "Registrar Nuevo Producto"}
                     </h2>
                     <p className="text-xs font-medium text-gray-500 mt-1">
                       Complete la información del producto.
@@ -369,8 +425,11 @@ export default function CatalogoProductosPage() {
                 </div>
 
                 <div className="overflow-y-auto flex-1 p-8">
-                  <form id="productForm" onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-
+                  <form
+                    id="productForm"
+                    onSubmit={handleSubmit}
+                    className="grid grid-cols-2 gap-4"
+                  >
                     {/* Sección 1: Datos Internos (ERP) */}
                     <div className="col-span-2 mb-2 border-b pb-2">
                       <h3 className="text-sm font-bold text-[#472825] flex items-center gap-2">
@@ -385,7 +444,10 @@ export default function CatalogoProductosPage() {
                         Código (SKU)
                       </label>
                       <div className="relative">
-                        <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <Hash
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                          size={18}
+                        />
                         <input
                           type="text"
                           name="codigo_sku"
@@ -404,7 +466,10 @@ export default function CatalogoProductosPage() {
                         Nombre del Producto
                       </label>
                       <div className="relative">
-                        <AlignLeft className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <AlignLeft
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                          size={18}
+                        />
                         <input
                           type="text"
                           name="nombre"
@@ -423,7 +488,10 @@ export default function CatalogoProductosPage() {
                         Precio de Venta
                       </label>
                       <div className="relative">
-                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <DollarSign
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                          size={18}
+                        />
                         <input
                           type="number"
                           name="precio_venta"
@@ -443,7 +511,10 @@ export default function CatalogoProductosPage() {
                         Precio Costo
                       </label>
                       <div className="relative">
-                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <DollarSign
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                          size={18}
+                        />
                         <input
                           type="number"
                           name="precio_costo"
@@ -463,7 +534,10 @@ export default function CatalogoProductosPage() {
                         Stock Inicial
                       </label>
                       <div className="relative">
-                        <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <Layers
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                          size={18}
+                        />
                         <input
                           type="number"
                           name="stock_actual"
@@ -483,7 +557,10 @@ export default function CatalogoProductosPage() {
                         Categoría
                       </label>
                       <div className="relative">
-                        <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <Tag
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                          size={18}
+                        />
                         <select
                           name="categoria"
                           value={formData.categoria}
@@ -507,38 +584,56 @@ export default function CatalogoProductosPage() {
                     </div>
 
                     {/* Publicado Web */}
-                    <div className="col-span-2 flex items-center gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200 cursor-pointer" onClick={handleCheckboxChange}>
+                    <div
+                      className="col-span-2 flex items-center gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200 cursor-pointer"
+                      onClick={handleCheckboxChange}
+                    >
                       <button type="button" className="text-[#D3AB80]">
-                        {formData.publicado_web ? <ToggleRight size={28} /> : <ToggleLeft size={28} className="text-gray-400" />}
+                        {formData.publicado_web ? (
+                          <ToggleRight size={28} />
+                        ) : (
+                          <ToggleLeft size={28} className="text-gray-400" />
+                        )}
                       </button>
                       <div>
-                        <span className="text-sm font-bold text-[#472825] block">Publicar en Tienda Online</span>
-                        <span className="text-xs text-gray-500">Haz que este producto sea visible en el E-commerce.</span>
+                        <span className="text-sm font-bold text-[#472825] block">
+                          Publicar en Tienda Online
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          Haz que este producto sea visible en el E-commerce.
+                        </span>
                       </div>
                     </div>
 
                     {/* Imágenes */}
-                    <div className="space-y-1.5 col-span-2">
-                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Imágenes del Producto
-                      </label>
-                      <div className="relative border-2 border-dashed border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl p-6 text-center">
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/*"
-                          onChange={handleImageChange}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                        <UploadCloud className="mx-auto text-gray-400 mb-2" size={32} />
-                        <span className="text-sm font-medium text-gray-600 block">
-                          Haz clic o arrastra imágenes aquí
-                        </span>
-                        <span className="text-xs text-gray-400 mt-1 block">
-                          {formData.imagenes.length > 0 ? `${formData.imagenes.length} imagen(es) seleccionada(s)` : 'Soporta PNG, JPG, WEBP'}
-                        </span>
+                    {!isEditing && (
+                      <div className="space-y-1.5 col-span-2">
+                        <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
+                          Imágenes del Producto
+                        </label>
+                        <div className="relative border-2 border-dashed border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl p-6 text-center">
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          />
+                          <UploadCloud
+                            className="mx-auto text-gray-400 mb-2"
+                            size={32}
+                          />
+                          <span className="text-sm font-medium text-gray-600 block">
+                            Haz clic o arrastra imágenes aquí
+                          </span>
+                          <span className="text-xs text-gray-400 mt-1 block">
+                            {formData.imagenes.length > 0
+                              ? `${formData.imagenes.length} imagen(es) seleccionada(s)`
+                              : "Soporta PNG, JPG, WEBP"}
+                          </span>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Descripción Web */}
                     <div className="space-y-1.5 col-span-2">
@@ -561,7 +656,10 @@ export default function CatalogoProductosPage() {
                         Longitud
                       </label>
                       <div className="relative">
-                        <Ruler className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <Ruler
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                          size={18}
+                        />
                         <input
                           type="text"
                           name="longitud"
@@ -579,7 +677,10 @@ export default function CatalogoProductosPage() {
                         Grosor
                       </label>
                       <div className="relative">
-                        <MoveVertical className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <MoveVertical
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                          size={18}
+                        />
                         <input
                           type="text"
                           name="grosor"
@@ -597,7 +698,10 @@ export default function CatalogoProductosPage() {
                         Peso Estimado
                       </label>
                       <div className="relative">
-                        <Weight className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <Weight
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                          size={18}
+                        />
                         <input
                           type="text"
                           name="peso_estimado"
@@ -616,9 +720,15 @@ export default function CatalogoProductosPage() {
                       </label>
                       <div className="relative">
                         {formData.estado === "Activo" ? (
-                          <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 text-green-500" size={18} />
+                          <CheckCircle2
+                            className="absolute left-4 top-1/2 -translate-y-1/2 text-green-500"
+                            size={18}
+                          />
                         ) : (
-                          <XCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500" size={18} />
+                          <XCircle
+                            className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500"
+                            size={18}
+                          />
                         )}
                         <select
                           name="estado"
@@ -647,7 +757,7 @@ export default function CatalogoProductosPage() {
                     form="productForm"
                     className="bg-[#472825] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-black transition-all shadow-md"
                   >
-                    {isEditing ? "Guardar" : "Crear"}
+                    {isEditing ? "Guardar Cambios" : "Crear Producto"}
                   </button>
                 </div>
               </motion.div>

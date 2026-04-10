@@ -1,15 +1,10 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   Plus,
-  Search,
   Trash2,
-  Download,
-  Upload,
-  Check,
   Eye,
   X,
-  Calculator,
   FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,7 +16,9 @@ import {
 import { getTerceros } from "@/src/actions/terceros";
 
 export default function NotasContablesPage() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [notas, setNotas] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [terceros, setTerceros] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -30,7 +27,9 @@ export default function NotasContablesPage() {
 
   // --- NUEVOS ESTADOS PARA VISTA PREVIA ---
   const [modalVerDetalle, setModalVerDetalle] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [notaSeleccionada, setNotaSeleccionada] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [detallesVisualizar, setDetallesVisualizar] = useState<any[]>([]);
 
   // Estado para la nueva nota (Cabecera)
@@ -43,11 +42,26 @@ export default function NotasContablesPage() {
   });
 
   // Estado para las líneas del asiento
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [lineas, setLineas] = useState<any[]>([
     { cuenta_puc: "", tercero_id: "", debito: 0, credito: 0 },
   ]);
 
-  const refreshData = async () => {
+  useEffect(() => {
+    const refreshData = async () => {
+      setIsLoading(true);
+      const [nRes, tRes] = await Promise.all([
+        getNotasContables(),
+        getTerceros(),
+      ]);
+      if (nRes.data) setNotas(nRes.data);
+      if (tRes.data) setTerceros(tRes.data);
+      setIsLoading(false);
+    };
+    refreshData();
+  }, []);
+
+  const refreshDataManual = async () => {
     setIsLoading(true);
     const [nRes, tRes] = await Promise.all([
       getNotasContables(),
@@ -58,11 +72,8 @@ export default function NotasContablesPage() {
     setIsLoading(false);
   };
 
-  useEffect(() => {
-    refreshData();
-  }, []);
-
   // --- FUNCIÓN PARA EL OJO ---
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleVerDetalle = async (nota: any) => {
     setNotaSeleccionada(nota);
     const res = await getDetalleNota(nota.id);
@@ -87,13 +98,14 @@ export default function NotasContablesPage() {
     if (res.error) {
       alert("Error al guardar: " + res.error);
     } else {
-      await refreshData();
+      await refreshDataManual();
       setModalStep(0);
       setLineas([{ cuenta_puc: "", tercero_id: "", debito: 0, credito: 0 }]);
     }
     setIsSaving(false);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleLineaChange = (index: number, field: string, value: any) => {
     const nuevasLineas = [...lineas];
     nuevasLineas[index][field] = field.includes("ito")
@@ -102,15 +114,18 @@ export default function NotasContablesPage() {
     setLineas(nuevasLineas);
   };
 
-  const sumas = useMemo(() => {
-    return lineas.reduce(
-      (acc, curr) => ({
-        debito: acc.debito + (curr.debito || 0),
-        credito: acc.credito + (curr.credito || 0),
-      }),
-      { debito: 0, credito: 0 },
-    );
-  }, [lineas]);
+  const eliminarLinea = (index: number) => {
+    const nuevasLineas = lineas.filter((_, i) => i !== index);
+    setLineas(nuevasLineas);
+  };
+
+  const sumas = lineas.reduce(
+    (acc, curr) => ({
+      debito: acc.debito + (curr.debito || 0),
+      credito: acc.credito + (curr.credito || 0),
+    }),
+    { debito: 0, credito: 0 },
+  );
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat("es-CO", {
@@ -189,11 +204,13 @@ export default function NotasContablesPage() {
               notas.map((nota) => {
                 const totalD =
                   nota.notas_contables_detalle?.reduce(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     (a: any, b: any) => a + (b.debito || 0),
                     0,
                   ) || 0;
                 const totalC =
                   nota.notas_contables_detalle?.reduce(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     (a: any, b: any) => a + (b.credito || 0),
                     0,
                   ) || 0;
@@ -489,7 +506,7 @@ export default function NotasContablesPage() {
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-2xl overflow-hidden border border-zinc-100"
+              className="bg-[#fdfbf9] rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden border border-zinc-100"
             >
               <div className="p-8 border-b flex justify-between items-center bg-[#fdfbf9]">
                 <div className="flex items-center gap-4">
@@ -514,14 +531,24 @@ export default function NotasContablesPage() {
               </div>
 
               <div className="p-8 space-y-6">
-                <div className="bg-zinc-50 p-6 rounded-3xl border border-zinc-100">
-                  <p className="text-[10px] font-black text-gray-400 uppercase mb-1">
-                    Tercero Responsable
-                  </p>
-                  <p className="font-bold text-[#472825]">
-                    {notaSeleccionada.terceros?.nombre_completo ||
-                      notaSeleccionada.terceros?.razon_social}
-                  </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-zinc-50 p-6 rounded-3xl border border-zinc-100">
+                    <p className="text-[10px] font-black text-gray-400 uppercase mb-1">
+                      Tercero Responsable
+                    </p>
+                    <p className="font-bold text-[#472825]">
+                      {notaSeleccionada.terceros?.nombre_completo ||
+                        notaSeleccionada.terceros?.razon_social}
+                    </p>
+                  </div>
+                  <div className="bg-zinc-50 p-6 rounded-3xl border border-zinc-100">
+                    <p className="text-[10px] font-black text-gray-400 uppercase mb-1">
+                      Concepto General
+                    </p>
+                    <p className="font-bold text-[#472825]">
+                      {notaSeleccionada.concepto_general || "N/A"}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="border border-zinc-100 rounded-3xl overflow-hidden">
@@ -534,7 +561,8 @@ export default function NotasContablesPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-50">
-                      {detallesVisualizar.map((det: any, idx: number) => (
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+                      detallesVisualizar.map((det: any, idx: number) => (
                         <tr key={idx}>
                           <td className="p-4 text-sm font-bold text-[#472825]">
                             {det.cuenta_puc}
@@ -555,11 +583,21 @@ export default function NotasContablesPage() {
               <div className="p-8 bg-zinc-50/50 border-t flex justify-end gap-12">
                 <div className="text-right">
                   <p className="text-[10px] font-black text-zinc-400 uppercase">
-                    Total Movimiento
+                    Total Débito
                   </p>
                   <p className="text-2xl font-black text-[#D3AB80]">
                     {formatCurrency(
-                      detallesVisualizar.reduce((a, b) => a + b.debito, 0),
+                      detallesVisualizar.reduce((a, b) => a + (b.debito || 0), 0),
+                    )}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-black text-zinc-400 uppercase">
+                    Total Crédito
+                  </p>
+                  <p className="text-2xl font-black text-[#D3AB80]">
+                    {formatCurrency(
+                      detallesVisualizar.reduce((a, b) => a + (b.credito || 0), 0),
                     )}
                   </p>
                 </div>

@@ -3,11 +3,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  createProducto,
-  getProductos,
-  deleteProducto,
-  updateProducto,
-} from "@/src/actions/inventario";
+  getTerceros,
+  createTercero,
+  updateTercero,
+} from "@/src/actions/terceros";
 import {
   Plus,
   Search,
@@ -16,217 +15,168 @@ import {
   X,
   CheckCircle2,
   XCircle,
-  Package,
+  User,
+  MapPin,
+  CreditCard,
+  ClipboardList,
   Hash,
   AlignLeft,
-  DollarSign,
-  Layers,
-  Archive,
-  BookOpen,
-  Scale,
-  Tag,
-  Image as ImageIcon,
-  Globe,
-  Ruler,
-  MoveVertical,
-  Weight,
-  UploadCloud,
+  Mail,
+  Phone,
   ToggleRight,
   ToggleLeft,
+  Archive,
 } from "lucide-react";
+import { Country, State, City } from "country-state-city";
 
-export default function CatalogoProductosPage() {
-  const [productos, setProductos] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+export default function TercerosGeneralPage() {
+  const [terceros, setTerceros] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState("Datos Principales");
 
-  // Form Data State
+  // Geographic State
+  const [selectedCountryCode, setSelectedCountryCode] = useState("CO");
+  const [selectedStateCode, setSelectedStateCode] = useState("");
+
   const [formData, setFormData] = useState({
-    id: null as any,
-    codigo_sku: "",
-    nombre: "",
-    precio_venta: "",
-    precio_costo: "",
-    stock_actual: "",
-    categoria: "Cadenas",
+    id: "",
+    tipo_identificacion: "CC",
+    numero_identificacion: "",
+    dv: "",
+    codigo_interno: "",
+    razon_social: "",
+    nombre_completo: "",
+    es_cliente: false,
+    es_empleado: false,
+    es_proveedor: false,
+    es_prospecto: false,
+    vendedor_asignado: "",
+    email: "",
+    email_novedades: "",
+    telefono1: "",
+    telefono2: "",
+    celular: "",
+    pais: "Colombia",
+    departamento: "",
+    ciudad: "",
+    direccion_fiscal: "",
+    direccion_despachos: "",
+    cumpleanos_dia: "",
+    cumpleanos_mes: "",
+    cartera: "",
+    forma_pago: "",
+    nivel_precio: "",
+    clasificacion: "",
+    aplica_cupo_credito: false,
+    observaciones: "",
     estado: "Activo",
-    imagenes: [] as File[],
-    descripcion_web: "",
-    longitud: "",
-    grosor: "",
-    peso_estimado: "",
-    publicado_web: false,
   });
 
-  const cargarInventario = async () => {
-    const { data, error } = await getProductos();
+  const [searchTerm, setSearchTerm] = useState("");
 
-    if (error) {
-      console.error("Error al leer Supabase:", error);
-    } else if (data) {
-      const joyasReales = data.map((joya: any) => ({
-        ...joya,
-        id: joya.id,
-        codigo: joya.codigo_sku,
-        nombre: joya.nombre,
-        categoria: joya.categoria,
-        precio: joya.precio_venta,
-        costo: joya.precio_costo,
-        stock: joya.stock_actual,
-        estado: joya.publicado_web ? "Activo" : "Inactivo",
-      }));
-      setProductos(joyasReales);
-    }
+  const fetchTerceros = async () => {
+    setIsLoading(true);
+    const res = await getTerceros();
+    if (res.data) setTerceros(res.data);
+    setIsLoading(false);
   };
 
   useEffect(() => {
-    cargarInventario();
+    fetchTerceros();
   }, []);
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
-  ) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+  const handleChange = (e: any) => {
+    const { name, value, type, checked } = e.target;
+    setFormData({ ...formData, [name]: type === "checkbox" ? checked : value });
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFormData({ ...formData, imagenes: Array.from(e.target.files) });
-    }
-  };
-
-  const handleCheckboxChange = () => {
-    setFormData({ ...formData, publicado_web: !formData.publicado_web });
-  };
-
-  const handleOpenCreate = () => {
+  const handleOpenNew = () => {
     setIsEditing(false);
     setFormData({
-      id: null,
-      codigo_sku: "",
-      nombre: "",
-      precio_venta: "",
-      precio_costo: "",
-      stock_actual: "",
-      categoria: "Cadenas",
+      id: "",
+      tipo_identificacion: "CC",
+      numero_identificacion: "",
+      dv: "",
+      codigo_interno: "",
+      razon_social: "",
+      nombre_completo: "",
+      es_cliente: false,
+      es_empleado: false,
+      es_proveedor: false,
+      es_prospecto: false,
+      vendedor_asignado: "",
+      email: "",
+      email_novedades: "",
+      telefono1: "",
+      telefono2: "",
+      celular: "",
+      pais: "Colombia",
+      departamento: "",
+      ciudad: "",
+      direccion_fiscal: "",
+      direccion_despachos: "",
+      cumpleanos_dia: "",
+      cumpleanos_mes: "",
+      cartera: "",
+      forma_pago: "",
+      nivel_precio: "",
+      clasificacion: "",
+      aplica_cupo_credito: false,
+      observaciones: "",
       estado: "Activo",
-      imagenes: [],
-      descripcion_web: "",
-      longitud: "",
-      grosor: "",
-      peso_estimado: "",
-      publicado_web: false,
     });
+    setActiveTab("Datos Principales");
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (producto: any) => {
+  const handleOpenEdit = (t: any) => {
     setIsEditing(true);
-    setFormData({
-      ...producto,
-      codigo_sku: producto.codigo || "",
-      nombre: producto.nombre || "",
-      precio_venta: producto.precio || "",
-      precio_costo: producto.costo || "",
-      stock_actual: producto.stock || "",
-      categoria: producto.categoria || "Cadenas",
-      estado: producto.estado || "Activo",
-      imagenes: [],
-      descripcion_web: producto.descripcion_web || "",
-      longitud: producto.longitud || "",
-      grosor: producto.grosor || "",
-      peso_estimado: producto.peso_estimado || "",
-      publicado_web: producto.publicado_web || false,
-    });
+    setFormData({ ...t });
     setIsModalOpen(true);
   };
 
-  // --- ELIMINAR CONECTADO ---
-  const handleDelete = async (id: any) => {
-    if (confirm("¿Estás seguro de que deseas eliminar este producto?")) {
-      const { success, error } = await deleteProducto(id);
-      if (success) {
-        await cargarInventario();
-      } else {
-        alert("Error al eliminar: " + error);
-      }
-    }
-  };
-
-  // --- SUBMIT CONECTADO ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
+    const { id, ...payload } = formData;
+    const finalPayload = {
+      ...payload,
+      cumpleanos_dia: payload.cumpleanos_dia
+        ? parseInt(payload.cumpleanos_dia.toString())
+        : null,
+      cumpleanos_mes: payload.cumpleanos_mes
+        ? parseInt(payload.cumpleanos_mes.toString())
+        : null,
+    };
 
-    if (isEditing) {
-      const updates = {
-        codigo_sku: formData.codigo_sku,
-        nombre: formData.nombre,
-        precio_venta: Number(formData.precio_venta),
-        precio_costo: Number(formData.precio_costo),
-        stock_actual: Number(formData.stock_actual),
-        categoria: formData.categoria,
-        descripcion_web: formData.descripcion_web,
-        longitud: formData.longitud,
-        grosor: formData.grosor,
-        peso_estimado: formData.peso_estimado,
-        publicado_web: formData.publicado_web,
-      };
-
-      const { error } = await updateProducto(formData.id, updates);
-      if (error) {
-        alert("Error al editar: " + error);
-      } else {
-        await cargarInventario();
-        setIsModalOpen(false);
-      }
-    } else {
-      const fd = new FormData();
-      fd.append("codigo_sku", formData.codigo_sku);
-      fd.append("nombre", formData.nombre);
-      fd.append(
-        "precio_costo",
-        (Number(formData.precio_costo) || 0).toString(),
-      );
-      fd.append(
-        "precio_venta",
-        (Number(formData.precio_venta) || 0).toString(),
-      );
-      fd.append(
-        "stock_actual",
-        (Number(formData.stock_actual) || 0).toString(),
-      );
-      fd.append("categoria", formData.categoria);
-      fd.append("descripcion_web", formData.descripcion_web);
-      fd.append("longitud", formData.longitud);
-      fd.append("grosor", formData.grosor);
-      fd.append("peso_estimado", formData.peso_estimado);
-      fd.append("publicado_web", formData.publicado_web.toString());
-
-      if (formData.imagenes && formData.imagenes.length > 0) {
-        formData.imagenes.forEach((img) => fd.append("imagen", img));
-      }
-
-      const { error } = await createProducto(fd as any);
-      if (error) {
-        alert("Error creando producto: " + error);
-      } else {
-        await cargarInventario();
-        setIsModalOpen(false);
-      }
+    try {
+      const res = isEditing
+        ? await updateTercero(id, finalPayload)
+        : await createTercero(finalPayload);
+      if (res.error) throw new Error(res.error);
+      await fetchTerceros();
+      setIsModalOpen(false);
+    } catch (error: any) {
+      alert("Error: " + error.message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const productosFiltrados = useMemo(() => {
-    return productos.filter(
-      (p) =>
-        p.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.nombre.toLowerCase().includes(searchTerm.toLowerCase()),
+  const filteredTerceros = useMemo(() => {
+    return terceros.filter(
+      (t) =>
+        (t.numero_identificacion || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        (t.nombre_completo || t.razon_social || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()),
     );
-  }, [productos, searchTerm]);
+  }, [terceros, searchTerm]);
 
   return (
     <div className="min-h-screen bg-[#fdfbf9] p-4 md:p-8 font-sans">
@@ -235,26 +185,22 @@ export default function CatalogoProductosPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-black text-[#472825] tracking-tight">
-              Catálogo de Productos
+              Gestión de Terceros
             </h1>
             <p className="text-sm font-medium text-gray-500 mt-1">
-              Panel de Control / Productos / Catálogo
+              Panel de Control / Terceros / General
             </p>
           </div>
           <button
-            onClick={handleOpenCreate}
-            className="group flex items-center gap-2 bg-[#472825] text-white px-5 py-2.5 rounded-2xl text-sm font-bold hover:bg-black transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+            onClick={handleOpenNew}
+            className="group flex items-center gap-2 bg-[#D3AB80] text-white px-5 py-2.5 rounded-2xl text-sm font-bold hover:bg-[#b8946d] transition-all shadow-lg hover:-translate-y-0.5"
           >
-            <Plus
-              size={18}
-              className="group-hover:rotate-90 transition-transform"
-            />
-            Nuevo Producto
+            <Plus size={18} /> Nuevo Tercero
           </button>
         </div>
 
-        {/* Search and Filters */}
-        <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4 items-center">
+        {/* Search Input */}
+        <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
           <div className="relative w-full md:max-w-md">
             <Search
               className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
@@ -262,7 +208,7 @@ export default function CatalogoProductosPage() {
             />
             <input
               type="text"
-              placeholder="Buscar por código o nombre..."
+              placeholder="Buscar por identificación o nombre..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-2xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825] placeholder-gray-400"
@@ -277,21 +223,12 @@ export default function CatalogoProductosPage() {
               <thead>
                 <tr className="bg-gray-50/50 border-b border-gray-100">
                   <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider">
-                    Código (SKU)
-                  </th>
-                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider w-1/3">
-                    Nombre del Producto
+                    Identificación
                   </th>
                   <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider">
-                    Categoría
+                    Tercero
                   </th>
-                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider text-right">
-                    Stock
-                  </th>
-                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider text-right">
-                    Precio de Venta
-                  </th>
-                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider">
+                  <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider text-center">
                     Estado
                   </th>
                   <th className="p-5 text-xs font-bold text-[#472825] uppercase tracking-wider text-center">
@@ -300,72 +237,42 @@ export default function CatalogoProductosPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {productosFiltrados.length > 0 ? (
-                  productosFiltrados.map((producto) => (
+                {filteredTerceros.length > 0 ? (
+                  filteredTerceros.map((t) => (
                     <tr
-                      key={producto.id}
+                      key={t.id}
                       className="hover:bg-gray-50 transition-colors"
                     >
+                      <td className="p-5 font-black text-[#472825] text-sm">
+                        {t.numero_identificacion}
+                      </td>
                       <td className="p-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-[#D3AB80]/20 flex items-center justify-center text-[#472825] shrink-0">
-                            <Package size={18} />
-                          </div>
-                          <span className="text-sm font-black text-[#472825] whitespace-nowrap">
-                            {producto.codigo}
-                          </span>
+                        <div className="font-bold text-sm text-[#472825]">
+                          {t.nombre_completo || t.razon_social}
                         </div>
+                        <div className="text-xs text-gray-400">{t.email}</div>
                       </td>
-                      <td className="p-5">
-                        <span className="text-sm font-medium text-gray-600 line-clamp-2">
-                          {producto.nombre}
-                        </span>
-                      </td>
-                      <td className="p-5">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-gray-100 text-gray-600">
-                          {producto.categoria}
-                        </span>
-                      </td>
-                      <td className="p-5 text-right">
-                        <span className="text-sm font-bold text-[#472825]">
-                          {producto.stock}
-                        </span>
-                      </td>
-                      <td className="p-5 text-right">
-                        <span className="text-sm font-bold text-[#472825]">
-                          ${Number(producto.precio).toLocaleString()}
-                        </span>
-                      </td>
-                      <td className="p-5">
+                      <td className="p-5 text-center">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
-                            producto.estado === "Activo"
-                              ? "bg-green-50 text-green-700 border border-green-200"
-                              : "bg-red-50 text-red-700 border border-red-200"
-                          }`}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${t.estado === "Activo" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}
                         >
-                          {producto.estado === "Activo" ? (
+                          {t.estado === "Activo" ? (
                             <CheckCircle2 size={14} />
                           ) : (
                             <XCircle size={14} />
                           )}
-                          {producto.estado}
+                          {t.estado}
                         </span>
                       </td>
                       <td className="p-5">
                         <div className="flex justify-center gap-3">
                           <button
-                            onClick={() => handleOpenEdit(producto)}
-                            className="p-2 text-[#D3AB80] hover:bg-[#D3AB80]/10 rounded-xl transition-colors tooltip"
-                            title="Editar"
+                            onClick={() => handleOpenEdit(t)}
+                            className="p-2 text-[#D3AB80] hover:bg-[#D3AB80]/10 rounded-xl transition-colors"
                           >
                             <Edit size={18} />
                           </button>
-                          <button
-                            onClick={() => handleDelete(producto.id)}
-                            className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors tooltip"
-                            title="Eliminar"
-                          >
+                          <button className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors">
                             <Trash2 size={18} />
                           </button>
                         </div>
@@ -375,10 +282,10 @@ export default function CatalogoProductosPage() {
                 ) : (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={4}
                       className="p-8 text-center text-gray-500 font-medium"
                     >
-                      No se encontraron productos.
+                      No se encontraron registros.
                     </td>
                   </tr>
                 )}
@@ -387,7 +294,7 @@ export default function CatalogoProductosPage() {
           </div>
         </div>
 
-        {/* Modal de Creación / Edición */}
+        {/* Modal (The DOHA Experience) */}
         <AnimatePresence>
           {isModalOpen && (
             <>
@@ -402,18 +309,15 @@ export default function CatalogoProductosPage() {
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-full max-w-2xl bg-white rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col"
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-full max-w-2xl bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col"
               >
                 <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0">
                   <div>
                     <h2 className="text-xl font-black text-[#472825]">
-                      {isEditing
-                        ? "Editar Producto"
-                        : "Registrar Nuevo Producto"}
+                      {isEditing ? "Editar" : "Registrar"} Tercero
                     </h2>
                     <p className="text-xs font-medium text-gray-500 mt-1">
-                      Complete la información del producto.
+                      Complete la información del aliado.
                     </p>
                   </div>
                   <button
@@ -424,340 +328,289 @@ export default function CatalogoProductosPage() {
                   </button>
                 </div>
 
-                <div className="overflow-y-auto flex-1 p-8">
+                <div className="flex px-8 border-b border-gray-100 bg-white shrink-0 overflow-x-auto gap-8">
+                  {["Datos Principales", "Ubicación", "Comercial", "Otros"].map(
+                    (tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`py-4 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === tab ? "border-[#D3AB80] text-[#D3AB80]" : "border-transparent text-gray-400"}`}
+                      >
+                        {tab}
+                      </button>
+                    ),
+                  )}
+                </div>
+
+                <div className="overflow-y-auto flex-1 p-8 bg-white">
                   <form
-                    id="productForm"
+                    id="terceroForm"
                     onSubmit={handleSubmit}
                     className="grid grid-cols-2 gap-4"
                   >
-                    {/* Sección 1: Datos Internos (ERP) */}
-                    <div className="col-span-2 mb-2 border-b pb-2">
-                      <h3 className="text-sm font-bold text-[#472825] flex items-center gap-2">
-                        <Archive size={16} />
-                        Datos Internos (ERP)
-                      </h3>
-                    </div>
-
-                    {/* Código SKU */}
-                    <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Código (SKU)
-                      </label>
-                      <div className="relative">
-                        <Hash
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                          size={18}
-                        />
-                        <input
-                          type="text"
-                          name="codigo_sku"
-                          value={formData.codigo_sku}
-                          onChange={handleChange}
-                          required
-                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825] uppercase"
-                          placeholder="Ej. CAD-MON-01"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Nombre */}
-                    <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Nombre del Producto
-                      </label>
-                      <div className="relative">
-                        <AlignLeft
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                          size={18}
-                        />
-                        <input
-                          type="text"
-                          name="nombre"
-                          value={formData.nombre}
-                          onChange={handleChange}
-                          required
-                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                          placeholder="Ej. Cadena Mónaco 3mm"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Precio Venta */}
-                    <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Precio de Venta
-                      </label>
-                      <div className="relative">
-                        <DollarSign
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                          size={18}
-                        />
-                        <input
-                          type="number"
-                          name="precio_venta"
-                          value={formData.precio_venta}
-                          onChange={handleChange}
-                          required
-                          min="0"
-                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                          placeholder="0"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Costo */}
-                    <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Precio Costo
-                      </label>
-                      <div className="relative">
-                        <DollarSign
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                          size={18}
-                        />
-                        <input
-                          type="number"
-                          name="precio_costo"
-                          value={formData.precio_costo}
-                          onChange={handleChange}
-                          required
-                          min="0"
-                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                          placeholder="0"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Stock Inicial */}
-                    <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Stock Inicial
-                      </label>
-                      <div className="relative">
-                        <Layers
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                          size={18}
-                        />
-                        <input
-                          type="number"
-                          name="stock_actual"
-                          value={formData.stock_actual}
-                          onChange={handleChange}
-                          required
-                          min="0"
-                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                          placeholder="0"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Categoría */}
-                    <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Categoría
-                      </label>
-                      <div className="relative">
-                        <Tag
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                          size={18}
-                        />
-                        <select
-                          name="categoria"
-                          value={formData.categoria}
-                          onChange={handleChange}
-                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825] appearance-none"
-                        >
-                          <option value="Cadenas">Cadenas</option>
-                          <option value="Pulseras">Pulseras</option>
-                          <option value="Anillos">Anillos</option>
-                          <option value="Topos">Topos</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Sección 2: Catálogo Web y E-commerce */}
-                    <div className="col-span-2 mt-4 mb-2 border-b pb-2">
-                      <h3 className="text-sm font-bold text-[#D3AB80] flex items-center gap-2">
-                        <Globe size={16} />
-                        Datos para Tienda Online
-                      </h3>
-                    </div>
-
-                    {/* Publicado Web */}
-                    <div
-                      className="col-span-2 flex items-center gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200 cursor-pointer"
-                      onClick={handleCheckboxChange}
-                    >
-                      <button type="button" className="text-[#D3AB80]">
-                        {formData.publicado_web ? (
-                          <ToggleRight size={28} />
-                        ) : (
-                          <ToggleLeft size={28} className="text-gray-400" />
-                        )}
-                      </button>
-                      <div>
-                        <span className="text-sm font-bold text-[#472825] block">
-                          Publicar en Tienda Online
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          Haz que este producto sea visible en el E-commerce.
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Imágenes */}
-                    {!isEditing && (
-                      <div className="space-y-1.5 col-span-2">
-                        <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                          Imágenes del Producto
-                        </label>
-                        <div className="relative border-2 border-dashed border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl p-6 text-center">
-                          <input
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            onChange={handleImageChange}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          />
-                          <UploadCloud
-                            className="mx-auto text-gray-400 mb-2"
-                            size={32}
-                          />
-                          <span className="text-sm font-medium text-gray-600 block">
-                            Haz clic o arrastra imágenes aquí
-                          </span>
-                          <span className="text-xs text-gray-400 mt-1 block">
-                            {formData.imagenes.length > 0
-                              ? `${formData.imagenes.length} imagen(es) seleccionada(s)`
-                              : "Soporta PNG, JPG, WEBP"}
-                          </span>
+                    {activeTab === "Datos Principales" && (
+                      <>
+                        <div className="col-span-2 mb-2 border-b pb-2 flex items-center gap-2 text-[#472825] font-bold text-sm">
+                          <Archive size={16} /> Información Principal
                         </div>
-                      </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">
+                            Tipo ID
+                          </label>
+                          <select
+                            name="tipo_identificacion"
+                            value={formData.tipo_identificacion}
+                            onChange={handleChange}
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm outline-none"
+                          >
+                            <option value="CC">CC</option>
+                            <option value="NIT">NIT</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">
+                            Número ID
+                          </label>
+                          <div className="relative">
+                            <Hash
+                              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                              size={16}
+                            />
+                            <input
+                              name="numero_identificacion"
+                              value={formData.numero_identificacion}
+                              onChange={handleChange}
+                              className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-sm outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="md:col-span-2 space-y-1.5">
+                          <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">
+                            Nombre / Razón Social
+                          </label>
+                          <div className="relative">
+                            <User
+                              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                              size={16}
+                            />
+                            <input
+                              name="nombre_completo"
+                              value={formData.nombre_completo}
+                              onChange={handleChange}
+                              className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-sm outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="md:col-span-2 grid grid-cols-4 gap-4 py-4 bg-gray-50 p-4 rounded-2xl border border-dashed">
+                          {[
+                            "es_cliente",
+                            "es_proveedor",
+                            "es_empleado",
+                            "es_prospecto",
+                          ].map((role) => (
+                            <label
+                              key={role}
+                              className="flex items-center gap-2 cursor-pointer group"
+                            >
+                              <input
+                                type="checkbox"
+                                name={role}
+                                checked={(formData as any)[role]}
+                                onChange={handleChange}
+                                className="w-4 h-4 accent-[#D3AB80]"
+                              />
+                              <span className="text-[10px] font-black uppercase text-gray-500">
+                                {role.split("_")[1]}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </>
                     )}
 
-                    {/* Descripción Web */}
-                    <div className="space-y-1.5 col-span-2">
-                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Descripción (Web)
-                      </label>
-                      <textarea
-                        name="descripcion_web"
-                        value={formData.descripcion_web}
-                        onChange={handleChange}
-                        rows={3}
-                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl p-3 text-sm font-medium outline-none transition-all text-[#472825]"
-                        placeholder="Descripción detallada para la tienda..."
-                      />
-                    </div>
+                    {activeTab === "Ubicación" && (
+                      <>
+                        <div className="col-span-2 mb-2 border-b pb-2 flex items-center gap-2 text-[#D3AB80] font-bold text-sm">
+                          <MapPin size={16} /> Contacto y Ubicación
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">
+                            País
+                          </label>
+                          <select
+                            value={selectedCountryCode}
+                            onChange={(e) =>
+                              setSelectedCountryCode(e.target.value)
+                            }
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm"
+                          >
+                            <option value="CO">Colombia</option>
+                            {Country.getAllCountries().map((c) => (
+                              <option key={c.isoCode} value={c.isoCode}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">
+                            Ciudad
+                          </label>
+                          <select
+                            name="ciudad"
+                            value={formData.ciudad}
+                            onChange={handleChange}
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm"
+                          >
+                            <option value="">Seleccionar...</option>
+                            {City.getCitiesOfState(
+                              selectedCountryCode,
+                              selectedStateCode,
+                            ).map((c) => (
+                              <option key={c.name} value={c.name}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="md:col-span-2 space-y-1.5">
+                          <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">
+                            Dirección Fiscal
+                          </label>
+                          <div className="relative">
+                            <MapPin
+                              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                              size={16}
+                            />
+                            <input
+                              name="direccion_fiscal"
+                              value={formData.direccion_fiscal}
+                              onChange={handleChange}
+                              className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-sm outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">
+                            Email
+                          </label>
+                          <div className="relative">
+                            <Mail
+                              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                              size={16}
+                            />
+                            <input
+                              name="email"
+                              value={formData.email}
+                              onChange={handleChange}
+                              className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-sm outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">
+                            Celular
+                          </label>
+                          <div className="relative">
+                            <Phone
+                              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                              size={16}
+                            />
+                            <input
+                              name="celular"
+                              value={formData.celular}
+                              onChange={handleChange}
+                              className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-sm outline-none"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
 
-                    {/* Longitud */}
-                    <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Longitud
-                      </label>
-                      <div className="relative">
-                        <Ruler
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                          size={18}
-                        />
-                        <input
-                          type="text"
-                          name="longitud"
-                          value={formData.longitud}
-                          onChange={handleChange}
-                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                          placeholder="Ej. 60cm"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Grosor */}
-                    <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Grosor
-                      </label>
-                      <div className="relative">
-                        <MoveVertical
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                          size={18}
-                        />
-                        <input
-                          type="text"
-                          name="grosor"
-                          value={formData.grosor}
-                          onChange={handleChange}
-                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                          placeholder="Ej. 5mm"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Peso Estimado */}
-                    <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Peso Estimado
-                      </label>
-                      <div className="relative">
-                        <Weight
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                          size={18}
-                        />
-                        <input
-                          type="text"
-                          name="peso_estimado"
-                          value={formData.peso_estimado}
-                          onChange={handleChange}
-                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                          placeholder="Ej. 15g"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Estado */}
-                    <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                        Estado Interno
-                      </label>
-                      <div className="relative">
-                        {formData.estado === "Activo" ? (
-                          <CheckCircle2
-                            className="absolute left-4 top-1/2 -translate-y-1/2 text-green-500"
-                            size={18}
+                    {activeTab === "Comercial" && (
+                      <>
+                        <div className="col-span-2 mb-2 border-b pb-2 flex items-center gap-2 text-[#D3AB80] font-bold text-sm">
+                          <CreditCard size={16} /> Comercial
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">
+                            Forma de Pago
+                          </label>
+                          <select
+                            name="forma_pago"
+                            value={formData.forma_pago}
+                            onChange={handleChange}
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm"
+                          >
+                            <option value="Contado">Contado</option>
+                            <option value="Credito">Crédito</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">
+                            Cartera
+                          </label>
+                          <input
+                            name="cartera"
+                            value={formData.cartera}
+                            onChange={handleChange}
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm"
                           />
-                        ) : (
-                          <XCircle
-                            className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500"
-                            size={18}
-                          />
-                        )}
-                        <select
-                          name="estado"
-                          value={formData.estado}
-                          onChange={handleChange}
-                          className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm font-medium outline-none transition-all text-[#472825] appearance-none"
+                        </div>
+                        <div
+                          className="col-span-2 flex items-center gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200 cursor-pointer"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              aplica_cupo_credito:
+                                !formData.aplica_cupo_credito,
+                            })
+                          }
                         >
-                          <option value="Activo">Activo</option>
-                          <option value="Inactivo">Inactivo</option>
-                        </select>
+                          {formData.aplica_cupo_credito ? (
+                            <ToggleRight className="text-[#D3AB80]" size={28} />
+                          ) : (
+                            <ToggleLeft className="text-gray-300" size={28} />
+                          )}
+                          <span className="text-xs font-bold text-[#472825]">
+                            Aplica Cupo Crédito
+                          </span>
+                        </div>
+                      </>
+                    )}
+
+                    {activeTab === "Otros" && (
+                      <div className="col-span-2 space-y-2">
+                        <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                          Notas Internas
+                        </label>
+                        <textarea
+                          name="observaciones"
+                          value={formData.observaciones}
+                          onChange={handleChange}
+                          rows={5}
+                          className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-medium text-sm outline-none"
+                          placeholder="Escribe aquí..."
+                        ></textarea>
                       </div>
-                    </div>
+                    )}
                   </form>
                 </div>
 
                 <div className="p-6 border-t border-gray-100 flex items-center justify-end gap-3 bg-gray-50/50 shrink-0">
                   <button
-                    type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-5 py-2.5 text-sm font-bold text-gray-500 hover:text-[#472825] transition-colors"
+                    className="px-5 py-2.5 text-sm font-bold text-gray-500 hover:text-[#472825]"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    form="productForm"
-                    className="bg-[#472825] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-black transition-all shadow-md"
+                    form="terceroForm"
+                    disabled={isSaving}
+                    className="bg-[#472825] text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-black transition-all"
                   >
-                    {isEditing ? "Guardar Cambios" : "Crear Producto"}
+                    {isSaving ? "Guardando..." : "Guardar Tercero"}
                   </button>
                 </div>
               </motion.div>

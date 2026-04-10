@@ -1,160 +1,141 @@
 "use client";
-import { useState, useEffect } from "react";
-import { Plus, Search, Edit, Trash2, X } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  X,
+  CheckCircle2,
+  XCircle,
+  User,
+  MapPin,
+  CreditCard,
+  ClipboardList,
+  Globe,
+  Phone,
+  Mail,
+  Hash,
+  AlignLeft,
+  Tag,
+  ToggleRight,
+  ToggleLeft,
+  Archive,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getTerceros, createTercero } from "@/src/actions/terceros";
+import {
+  getTerceros,
+  createTercero,
+  updateTercero,
+} from "@/src/actions/terceros";
 import { Country, State, City } from "country-state-city";
 
-type Tercero = {
-  id: string;
-  codigo: string;
-  tipoIdentificacion: string;
-  nit: string;
-  dv: string;
-  razonSocial: string;
-  nombreCompleto: string;
-  roles: {
-    cliente: boolean;
-    empleado: boolean;
-    proveedor: boolean;
-    prospecto: boolean;
-  };
-  vendedor: string;
-  correo: string;
-  correoNovedades: string;
-  telefono1: string;
-  telefono2: string;
-  celular: string;
-  pais: string;
-  departamento: string;
-  ciudad: string;
-  direccionFiscal: string;
-  direccionDespachos: string;
-  cumpleDia: string;
-  cumpleMes: string;
-  cartera: string;
-  formaPago: string;
-  nivelPrecio: string;
-  clasificacion: string;
-  aplicaCredito: boolean;
-  observaciones: string;
-  estado: "Activo" | "Inactivo";
-  // For backwards compatibility / initial parsing map
-  nombre?: string;
-  tipo?: "Cliente" | "Proveedor";
-  telefono?: string;
-  direccion?: string;
-};
-
 export default function TercerosGeneralPage() {
-  const [terceros, setTerceros] = useState<Tercero[]>([]);
+  const [terceros, setTerceros] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  // const [searchTerm, setSearchTerm] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState("Datos Principales");
 
-  const [formData, setFormData] = useState<Tercero>({
+  // Geographic Selectors State
+  const [selectedCountryCode, setSelectedCountryCode] = useState("CO");
+  const [selectedStateCode, setSelectedStateCode] = useState("");
+
+  // Estado del Formulario: Coincide 1:1 con las columnas de tu nueva tabla en Supabase
+  const [formData, setFormData] = useState({
     id: "",
-    codigo: "",
-    tipoIdentificacion: "CC",
-    nit: "",
+    tipo_identificacion: "CC",
+    numero_identificacion: "",
     dv: "",
-    razonSocial: "",
-    nombreCompleto: "",
-    roles: {
-      cliente: false,
-      empleado: false,
-      proveedor: false,
-      prospecto: false,
-    },
-    vendedor: "",
-    correo: "",
-    correoNovedades: "",
+    codigo_interno: "",
+    razon_social: "",
+    nombre_completo: "",
+    es_cliente: false,
+    es_empleado: false,
+    es_proveedor: false,
+    es_prospecto: false,
+    vendedor_asignado: "",
+    email: "",
+    email_novedades: "",
     telefono1: "",
     telefono2: "",
     celular: "",
     pais: "Colombia",
     departamento: "",
     ciudad: "",
-    direccionFiscal: "",
-    direccionDespachos: "",
-    cumpleDia: "",
-    cumpleMes: "",
+    direccion_fiscal: "",
+    direccion_despachos: "",
+    cumpleanos_dia: "",
+    cumpleanos_mes: "",
     cartera: "",
-    formaPago: "",
-    nivelPrecio: "",
+    forma_pago: "",
+    nivel_precio: "",
     clasificacion: "",
-    aplicaCredito: false,
+    aplica_cupo_credito: false,
     observaciones: "",
     estado: "Activo",
   });
 
-  const [activeTab, setActiveTab] = useState("Datos Principales");
-
-  // Filters state
+  // Filtros
   const [filterCodigo, setFilterCodigo] = useState("");
   const [filterDescripcion, setFilterDescripcion] = useState("");
   const [filterActivo, setFilterActivo] = useState("Todos");
   const [filterCliente, setFilterCliente] = useState("Todos");
-  const [filterEmpleado, setFilterEmpleado] = useState("Todos");
-  const [filterProveedor, setFilterProveedor] = useState("Todos");
-
-  // Geographic Selectors State
-  const [selectedCountryCode, setSelectedCountryCode] = useState("CO");
-  const [selectedStateCode, setSelectedStateCode] = useState("");
 
   const fetchTerceros = async () => {
     setIsLoading(true);
-    try {
-      const data = await getTerceros();
-      if (data) {
-        setTerceros(data);
-      }
-    } catch (error) {
-      console.error("Error fetching terceros:", error);
-    } finally {
-      setIsLoading(false);
+    const res = await getTerceros();
+    if (res.data) {
+      setTerceros(res.data);
     }
+    if (res.error) {
+      console.error("Error en Supabase:", res.error);
+    }
+    setIsLoading(false);
   };
 
   useEffect(() => {
     fetchTerceros();
   }, []);
 
+  const handleChange = (e: any) => {
+    const { name, value, type, checked } = e.target;
+    setFormData({ ...formData, [name]: type === "checkbox" ? checked : value });
+  };
+
   const handleOpenNew = () => {
     setIsEditing(false);
     setFormData({
       id: "",
-      codigo: "",
-      tipoIdentificacion: "CC",
-      nit: "",
+      tipo_identificacion: "CC",
+      numero_identificacion: "",
       dv: "",
-      razonSocial: "",
-      nombreCompleto: "",
-      roles: {
-        cliente: false,
-        empleado: false,
-        proveedor: false,
-        prospecto: false,
-      },
-      vendedor: "",
-      correo: "",
-      correoNovedades: "",
+      codigo_interno: "",
+      razon_social: "",
+      nombre_completo: "",
+      es_cliente: false,
+      es_empleado: false,
+      es_proveedor: false,
+      es_prospecto: false,
+      vendedor_asignado: "",
+      email: "",
+      email_novedades: "",
       telefono1: "",
       telefono2: "",
       celular: "",
       pais: "Colombia",
       departamento: "",
       ciudad: "",
-      direccionFiscal: "",
-      direccionDespachos: "",
-      cumpleDia: "",
-      cumpleMes: "",
+      direccion_fiscal: "",
+      direccion_despachos: "",
+      cumpleanos_dia: "",
+      cumpleanos_mes: "",
       cartera: "",
-      formaPago: "",
-      nivelPrecio: "",
+      forma_pago: "",
+      nivel_precio: "",
       clasificacion: "",
-      aplicaCredito: false,
+      aplica_cupo_credito: false,
       observaciones: "",
       estado: "Activo",
     });
@@ -162,836 +143,622 @@ export default function TercerosGeneralPage() {
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (tercero: Tercero) => {
+  const handleOpenEdit = (t: any) => {
     setIsEditing(true);
-    // Para no romper la vista de edición si tercero viene directo de DB:
-    setFormData({
-      ...tercero,
-      id: tercero.id || "",
-      codigo: tercero.codigo || "",
-      tipoIdentificacion: tercero.tipoIdentificacion || "NIT",
-      nit: tercero.nit || "",
-      dv: tercero.dv || "",
-      razonSocial: tercero.razonSocial || tercero.nombre || "",
-      nombreCompleto: tercero.nombreCompleto || tercero.nombre || "",
-      roles: tercero.roles || {
-        cliente: (tercero.tipo as string) === "cliente" || tercero.tipo === "Cliente",
-        empleado: (tercero.tipo as string) === "vendedor",
-        proveedor: (tercero.tipo as string) === "proveedor" || tercero.tipo === "Proveedor",
-        prospecto: false,
-      },
-      vendedor: tercero.vendedor || "",
-      correo: tercero.correo || "",
-      correoNovedades: tercero.correoNovedades || "",
-      telefono1: tercero.telefono1 || tercero.telefono || "",
-      telefono2: tercero.telefono2 || "",
-      celular: tercero.celular || "",
-      pais: tercero.pais || "Colombia",
-      departamento: tercero.departamento || "",
-      ciudad: tercero.ciudad || "",
-      direccionFiscal: tercero.direccionFiscal || tercero.direccion || "",
-      direccionDespachos: tercero.direccionDespachos || "",
-      cumpleDia: tercero.cumpleDia || "",
-      cumpleMes: tercero.cumpleMes || "",
-      cartera: tercero.cartera || "",
-      formaPago: tercero.formaPago || "",
-      nivelPrecio: tercero.nivelPrecio || "",
-      clasificacion: tercero.clasificacion || "",
-      aplicaCredito: tercero.aplicaCredito || false,
-      observaciones: tercero.observaciones || "",
-      estado: typeof tercero.estado === "boolean" ? (tercero.estado ? "Activo" : "Inactivo") : (tercero.estado || "Activo"),
-    });
+    setFormData({ ...t });
     setIsModalOpen(true);
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm("¿Estás seguro de eliminar este tercero?")) {
-      setTerceros(terceros.filter((t) => t.id !== id));
-    }
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+    const { id, ...payload } = formData;
+
+    const finalPayload = {
+      ...payload,
+      cumpleanos_dia: payload.cumpleanos_dia
+        ? parseInt(payload.cumpleanos_dia.toString())
+        : null,
+      cumpleanos_mes: payload.cumpleanos_mes
+        ? parseInt(payload.cumpleanos_mes.toString())
+        : null,
+    };
+
     try {
-      if (isEditing) {
-        setTerceros(
-          terceros.map((t) => (t.id === formData.id ? { ...formData } : t))
-        );
-      } else {
-        // Mapeo del payload para Supabase
-        const tipoMap = formData.roles.cliente ? "cliente" : formData.roles.proveedor ? "proveedor" : formData.roles.empleado ? "vendedor" : "cliente";
-
-        const payloadSupabase = {
-          nit: formData.nit,
-          nombre: formData.razonSocial || formData.nombreCompleto || "",
-          tipo: tipoMap,
-          telefono: formData.telefono1 || "",
-          direccion: formData.direccionFiscal || "",
-          ciudad: formData.ciudad || "",
-          estado: formData.estado === "Activo",
-        };
-
-        await createTercero(payloadSupabase);
-        await fetchTerceros(); // refetch updated data
-      }
+      const res = isEditing
+        ? await updateTercero(id, finalPayload)
+        : await createTercero(finalPayload);
+      if (res.error) throw new Error(res.error);
+      await fetchTerceros();
       setIsModalOpen(false);
-    } catch (error) {
-      console.error("Error saving tercero:", error);
-      alert("Error al guardar el tercero");
+    } catch (error: any) {
+      alert("Error: " + error.message);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const [isSaving, setIsSaving] = useState(false);
+  const filteredTerceros = useMemo(() => {
+    return terceros.filter((t) => {
+      const matchId = (t.numero_identificacion || "")
+        .toLowerCase()
+        .includes(filterCodigo.toLowerCase());
+      const matchNombre = (t.nombre_completo || t.razon_social || "")
+        .toLowerCase()
+        .includes(filterDescripcion.toLowerCase());
+      return matchId && matchNombre;
+    });
+  }, [terceros, filterCodigo, filterDescripcion]);
 
-  const filteredTerceros = terceros.filter((t) => {
-    const matchCodigo = (t.codigo || "").toLowerCase().includes(filterCodigo.toLowerCase());
-    const desc = `${t.razonSocial || ""} ${t.nombreCompleto || ""} ${t.nombre || ""}`.toLowerCase();
-    const matchDesc = desc.includes(filterDescripcion.toLowerCase());
-
-    const isActivo = typeof t.estado === "boolean" ? t.estado : t.estado === "Activo";
-    const matchActivo = filterActivo === "Todos" ? true : (filterActivo === "Sí" && isActivo) || (filterActivo === "No" && !isActivo);
-
-    // For mapping role checks, use t.roles if it exists, otherwise rely on t.tipo
-    const isCliente = t.roles?.cliente || (t.tipo as string) === "cliente" || t.tipo === "Cliente";
-    const isEmpleado = t.roles?.empleado || (t.tipo as string) === "vendedor";
-    const isProveedor = t.roles?.proveedor || (t.tipo as string) === "proveedor" || t.tipo === "Proveedor";
-
-    const matchCliente = filterCliente === "Todos" ? true : (filterCliente === "Sí" && isCliente) || (filterCliente === "No" && !isCliente);
-    const matchEmpleado = filterEmpleado === "Todos" ? true : (filterEmpleado === "Sí" && isEmpleado) || (filterEmpleado === "No" && !isEmpleado);
-    const matchProveedor = filterProveedor === "Todos" ? true : (filterProveedor === "Sí" && isProveedor) || (filterProveedor === "No" && !isProveedor);
-
-    return matchCodigo && matchDesc && matchActivo && matchCliente && matchEmpleado && matchProveedor;
-  });
-
-  if (isLoading) {
+  if (isLoading)
     return (
-      <div className="max-w-[1600px] mx-auto p-6 min-h-screen flex items-center justify-center">
-        <p className="text-gray-500 font-medium text-lg">Cargando clientes...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#fdfbf9]">
+        <div className="w-12 h-12 border-4 border-[#D3AB80] border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="font-black text-[#472825]">
+          Sincronizando con la Bóveda de Terceros...
+        </p>
       </div>
     );
-  }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto w-full bg-[#fdfbf9] min-h-screen text-[#472825]">
-      {/* HEADER Y FILTROS */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div className="p-8 max-w-[1600px] mx-auto w-full bg-[#fdfbf9] min-h-screen text-[#472825]">
+      {/* HEADER IGUAL AL DE TU IMAGEN */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-[#472825]">
+          <h1 className="text-4xl font-black tracking-tighter text-[#472825]">
             Gestión de Terceros
           </h1>
           <p className="text-sm font-medium text-gray-500 mt-1">
-            Administra clientes, proveedores, empleados y prospectos.
+            Administra clientes, proveedores, empleados y prospectos de DOHA
+            18K.
           </p>
         </div>
         <button
           onClick={handleOpenNew}
-          className="flex items-center gap-2 bg-[#D3AB80] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#b8946d] transition-all shadow-md shadow-[#D3AB80]/20 hover:-translate-y-0.5"
+          className="bg-[#D3AB80] text-white px-8 py-3.5 rounded-2xl font-black text-sm shadow-xl shadow-[#D3AB80]/30 hover:bg-[#b8946d] transition-all flex items-center gap-2"
         >
-          <Plus size={18} strokeWidth={2.5} />
-          Nuevo Tercero
+          <Plus size={20} strokeWidth={3} /> Nuevo Tercero
         </button>
       </div>
 
-      {/* BARRA DE FILTROS */}
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-4 items-end">
-        <div className="flex-1 min-w-[150px] space-y-1">
-          <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Código</label>
+      {/* BARRA DE FILTROS PROFESIONAL */}
+      <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-8 grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+            Código
+          </label>
           <input
-            type="text"
             value={filterCodigo}
             onChange={(e) => setFilterCodigo(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 px-4 text-sm focus:outline-none focus:border-[#D3AB80] focus:bg-white transition-all"
-            placeholder="Buscar por código..."
+            className="w-full bg-gray-50 border p-3 rounded-xl outline-none focus:border-[#D3AB80] text-sm"
+            placeholder="NIT o CC..."
           />
         </div>
-        <div className="flex-1 min-w-[200px] space-y-1">
-          <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Descripción</label>
+        <div className="md:col-span-2 space-y-1.5">
+          <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+            Descripción
+          </label>
           <input
-            type="text"
             value={filterDescripcion}
             onChange={(e) => setFilterDescripcion(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 px-4 text-sm focus:outline-none focus:border-[#D3AB80] focus:bg-white transition-all"
-            placeholder="Razón social o nombre..."
+            className="w-full bg-gray-50 border p-3 rounded-xl outline-none focus:border-[#D3AB80] text-sm"
+            placeholder="Nombre o Razón Social..."
           />
         </div>
-        <div className="w-[120px] space-y-1">
-          <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Activo</label>
-          <select
-            value={filterActivo}
-            onChange={(e) => setFilterActivo(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-[#D3AB80] focus:bg-white transition-all"
-          >
-            <option value="Todos">Todos</option>
-            <option value="Sí">Sí</option>
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+            Activo
+          </label>
+          <select className="w-full bg-gray-50 border p-3 rounded-xl outline-none text-sm">
+            <option>Todos</option>
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+            Cliente
+          </label>
+          <select className="w-full bg-gray-50 border p-3 rounded-xl outline-none text-sm">
+            <option>Todos</option>
+            <option value="Si">Si</option>
             <option value="No">No</option>
           </select>
         </div>
-        <div className="w-[120px] space-y-1">
-          <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Cliente</label>
-          <select
-            value={filterCliente}
-            onChange={(e) => setFilterCliente(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-[#D3AB80] focus:bg-white transition-all"
-          >
-            <option value="Todos">Todos</option>
-            <option value="Sí">Sí</option>
-            <option value="No">No</option>
-          </select>
-        </div>
-        <div className="w-[120px] space-y-1">
-          <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Empleado</label>
-          <select
-            value={filterEmpleado}
-            onChange={(e) => setFilterEmpleado(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-[#D3AB80] focus:bg-white transition-all"
-          >
-            <option value="Todos">Todos</option>
-            <option value="Sí">Sí</option>
-            <option value="No">No</option>
-          </select>
-        </div>
-        <div className="w-[120px] space-y-1">
-          <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Proveedor</label>
-          <select
-            value={filterProveedor}
-            onChange={(e) => setFilterProveedor(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-[#D3AB80] focus:bg-white transition-all"
-          >
-            <option value="Todos">Todos</option>
-            <option value="Sí">Sí</option>
-            <option value="No">No</option>
-          </select>
-        </div>
-        <button className="bg-[#1f2937] hover:bg-black text-white p-3 rounded-xl transition-colors shrink-0 flex items-center justify-center">
+        <button className="bg-[#1f2937] text-white p-3.5 rounded-xl hover:bg-black transition-colors flex justify-center">
           <Search size={20} />
         </button>
       </div>
 
       {/* TABLA DE TERCEROS */}
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100">
-                <th className="p-5 text-[11px] uppercase tracking-wider font-black text-gray-500 w-[15%]">
-                  NIT/CC
-                </th>
-                <th className="p-5 text-[11px] uppercase tracking-wider font-black text-gray-500 w-[20%]">
-                  Razón Social / Nombre
-                </th>
-                <th className="p-5 text-[11px] uppercase tracking-wider font-black text-gray-500 w-[15%]">
-                  Dirección
-                </th>
-                <th className="p-5 text-[11px] uppercase tracking-wider font-black text-gray-500 w-[15%]">
-                  Teléfonos
-                </th>
-                <th className="p-5 text-[11px] uppercase tracking-wider font-black text-gray-500 w-[10%]">
-                  Ciudad
-                </th>
-                <th className="p-5 text-[11px] uppercase tracking-wider font-black text-gray-500 w-[10%]">
-                  Estado
-                </th>
-                <th className="p-5 text-[11px] uppercase tracking-wider font-black text-gray-500 w-[15%] text-center">
-                  Acciones
-                </th>
+      <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-gray-50/50 border-b border-gray-100">
+              <th className="p-6 text-[11px] font-black uppercase text-gray-400">
+                NIT/CC
+              </th>
+              <th className="p-6 text-[11px] font-black uppercase text-gray-400">
+                Razón Social / Nombre
+              </th>
+              <th className="p-6 text-[11px] font-black uppercase text-gray-400">
+                Dirección
+              </th>
+              <th className="p-6 text-[11px] font-black uppercase text-gray-400">
+                Teléfonos
+              </th>
+              <th className="p-6 text-[11px] font-black uppercase text-gray-400 text-center">
+                Estado
+              </th>
+              <th className="p-6 text-[11px] font-black uppercase text-gray-400 text-center">
+                Acciones
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {filteredTerceros.map((t) => (
+              <tr
+                key={t.id}
+                className="hover:bg-gray-50/50 transition-all group"
+              >
+                <td className="p-6 font-black text-[#472825]">
+                  {t.numero_identificacion}{" "}
+                  <span className="text-gray-300 text-xs ml-1">{t.dv}</span>
+                </td>
+                <td className="p-6">
+                  <div className="font-bold">
+                    {t.nombre_completo || t.razon_social}
+                  </div>
+                  <div className="text-xs text-gray-400">{t.email}</div>
+                </td>
+                <td className="p-6 text-sm text-gray-500">
+                  {t.direccion_fiscal}
+                </td>
+                <td className="p-6 text-sm font-bold text-gray-600">
+                  {t.celular || t.telefono1}
+                </td>
+                <td className="p-6 text-center">
+                  <span
+                    className={`px-4 py-1.5 rounded-full text-[10px] font-black ${t.estado === "Activo" ? "bg-green-50 text-green-600 border border-green-100" : "bg-red-50 text-red-600"}`}
+                  >
+                    {t.estado?.toUpperCase()}
+                  </span>
+                </td>
+                <td className="p-6">
+                  <div className="flex justify-center gap-2">
+                    <button
+                      onClick={() => handleOpenEdit(t)}
+                      className="p-2 text-[#D3AB80] hover:bg-[#D3AB80]/10 rounded-xl transition-all"
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button className="p-2 text-red-300 hover:bg-red-50 rounded-xl transition-all">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredTerceros.length > 0 ? (
-                filteredTerceros.map((tercero) => (
-                  <tr
-                    key={tercero.id}
-                    className="hover:bg-gray-50/50 transition-colors group"
-                  >
-                    <td className="p-5">
-                      <div className="font-bold text-[#472825]">
-                        {tercero.nit} {tercero.dv && `-${tercero.dv}`}
-                      </div>
-                      <div className="text-xs text-gray-500 font-medium">
-                        {tercero.tipoIdentificacion}
-                      </div>
-                    </td>
-                    <td className="p-5">
-                      <div className="font-bold text-[#472825]">
-                        {tercero.razonSocial || tercero.nombreCompleto || tercero.nombre}
-                      </div>
-                      <div className="text-xs text-gray-500 font-medium truncate max-w-[200px]">
-                        {tercero.correo}
-                      </div>
-                    </td>
-                    <td className="p-5 text-sm font-medium text-gray-600 truncate max-w-[150px]">
-                      {tercero.direccionFiscal || tercero.direccion}
-                    </td>
-                    <td className="p-5 text-sm font-medium text-gray-600">
-                      <div>{tercero.telefono1 || tercero.telefono}</div>
-                      {tercero.celular && (
-                        <div className="text-xs text-gray-400">{tercero.celular}</div>
-                      )}
-                    </td>
-                    <td className="p-5 text-sm font-medium text-gray-600">
-                      {tercero.ciudad}
-                    </td>
-                    <td className="p-5">
-                      <span
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                          (typeof tercero.estado === "boolean" ? tercero.estado : tercero.estado === "Activo")
-                            ? "bg-green-50 text-green-700 border border-green-200"
-                            : "bg-red-50 text-red-700 border border-red-200"
-                        }`}
-                      >
-                        {(typeof tercero.estado === "boolean" ? tercero.estado : tercero.estado === "Activo") ? "Activo" : "Inactivo"}
-                      </span>
-                    </td>
-                    <td className="p-5">
-                      <div className="flex justify-center gap-3">
-                        <button
-                          onClick={() => handleOpenEdit(tercero)}
-                          className="p-2 text-[#D3AB80] hover:bg-[#D3AB80]/10 rounded-xl transition-colors tooltip"
-                          title="Editar"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(tercero.id)}
-                          className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors tooltip"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="p-8 text-center text-gray-500 font-medium"
-                  >
-                    No se encontraron terceros.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {/* --- MODAL DE CREACIÓN / EDICIÓN --- */}
+      {/* MODAL GIGANTE - EXACTO A TUS IMÁGENES */}
       <AnimatePresence>
         {isModalOpen && (
-          <>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsModalOpen(false)}
-              className="fixed inset-0 z-[100] bg-zinc-950/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-[#472825]/20 backdrop-blur-md"
             />
-
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-full max-w-6xl max-h-[90vh] bg-[#fdfbf9] rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden border border-gray-100 flex flex-col"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="relative bg-[#fdfbf9] w-full max-w-6xl max-h-[95vh] rounded-[2.5rem] shadow-2xl border border-white flex flex-col overflow-hidden"
             >
-              <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
+              {/* HEADER MODAL */}
+              <div className="p-8 bg-white border-b flex justify-between items-center">
                 <div>
-                  <h2 className="text-2xl font-black text-[#472825]">
-                    {isEditing ? "Editar Tercero" : "Registrar Tercero"}
+                  <h2 className="text-3xl font-black text-[#472825]">
+                    {isEditing ? "Editar" : "Registrar"} Tercero
                   </h2>
-                  <p className="text-sm font-medium text-gray-500 mt-1">
-                    {isEditing
-                      ? "Modifica los datos del tercero."
-                      : "Completa los datos para el nuevo tercero."}
+                  <p className="text-gray-400 font-medium">
+                    Completa los datos técnicos del nuevo aliado comercial.
                   </p>
                 </div>
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="p-2 text-gray-400 hover:text-[#472825] hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-3 bg-gray-50 hover:bg-gray-100 rounded-full text-gray-400 transition-all"
                 >
                   <X size={24} />
                 </button>
               </div>
 
-              {/* TABS */}
-              <div className="bg-white border-b border-gray-100 px-8 flex gap-8 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("Datos Principales")}
-                  className={`py-4 text-sm font-bold border-b-2 transition-colors ${
-                    activeTab === "Datos Principales"
-                      ? "border-[#D3AB80] text-[#D3AB80]"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  Datos Principales
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("Sucursales")}
-                  className={`py-4 text-sm font-bold border-b-2 transition-colors ${
-                    activeTab === "Sucursales"
-                      ? "border-[#D3AB80] text-[#D3AB80]"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  Sucursales
-                </button>
+              {/* TABS CON ESTILO */}
+              <div className="flex px-8 bg-white border-b gap-8">
+                {["Datos Principales", "Sucursales", "Comercial", "Otros"].map(
+                  (tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`py-4 text-sm font-black transition-all border-b-4 ${activeTab === tab ? "border-[#D3AB80] text-[#D3AB80]" : "border-transparent text-gray-300"}`}
+                    >
+                      {tab}
+                    </button>
+                  ),
+                )}
               </div>
 
-              {/* CONTENIDO SCROLLABLE */}
-              <div className="flex-1 overflow-y-auto p-8 bg-[#fdfbf9]">
-                <form id="terceroForm" onSubmit={handleSubmit} className="space-y-6">
-                  {activeTab === "Datos Principales" ? (
-                    <div className="space-y-6">
-                      {/* TARJETA 1: Información Principal */}
-                      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                        <h3 className="text-lg font-bold text-[#472825] mb-4">Información Principal</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Tipo Identificación</label>
+              {/* CONTENIDO DEL FORMULARIO */}
+              <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                <form
+                  id="terceroForm"
+                  onSubmit={handleSubmit}
+                  className="space-y-8"
+                >
+                  {activeTab === "Datos Principales" && (
+                    <>
+                      {/* INFORMACIÓN PRINCIPAL */}
+                      <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-6">
+                        <div className="flex items-center gap-3 text-[#D3AB80] mb-2">
+                          <User size={20} />
+                          <h3 className="font-black text-sm uppercase tracking-tighter">
+                            Información Principal
+                          </h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                              Tipo Identificación
+                            </label>
                             <select
-                              name="tipoIdentificacion"
-                              value={formData.tipoIdentificacion}
+                              name="tipo_identificacion"
+                              value={formData.tipo_identificacion}
                               onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                              className="w-full p-4 bg-gray-50 border rounded-2xl outline-none focus:border-[#D3AB80] font-bold text-sm"
                             >
-                              <option value="CC">CC</option>
-                              <option value="NIT">NIT</option>
-                              <option value="CE">CE</option>
-                              <option value="Pasaporte">Pasaporte</option>
+                              <option value="CC">CC - Cédula</option>
+                              <option value="NIT">NIT - Impuestos</option>
+                              <option value="CE">Cédula Extranjería</option>
+                              <option value="PASAPORTE">Pasaporte</option>
                             </select>
                           </div>
-
-                          <div className="space-y-1.5 md:col-span-2">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Número Identificación</label>
+                          <div className="md:col-span-2 space-y-2">
+                            <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                              Número Identificación
+                            </label>
                             <div className="flex gap-2">
                               <input
-                                type="text"
-                                name="nit"
-                                value={formData.nit}
+                                name="numero_identificacion"
+                                value={formData.numero_identificacion}
                                 onChange={handleChange}
-                                className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                                className="flex-1 p-4 bg-gray-50 border rounded-2xl outline-none focus:border-[#D3AB80] font-bold"
                                 placeholder="Ej. 900123456"
                               />
-                              <button type="button" className="bg-[#1f2937] hover:bg-black text-white p-3 rounded-xl transition-colors shrink-0 flex items-center justify-center">
+                              <button
+                                type="button"
+                                className="bg-[#1f2937] text-white p-4 rounded-xl"
+                              >
                                 <Search size={20} />
                               </button>
                             </div>
                           </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                              <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">DV</label>
+                          <div className="flex gap-4">
+                            <div className="w-1/3 space-y-2">
+                              <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                                DV
+                              </label>
                               <input
-                                type="text"
                                 name="dv"
                                 value={formData.dv}
                                 onChange={handleChange}
-                                className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825] text-center"
+                                className="w-full p-4 bg-gray-50 border rounded-2xl text-center font-bold"
                               />
                             </div>
-                            <div className="space-y-1.5">
-                              <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Código</label>
+                            <div className="w-2/3 space-y-2">
+                              <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                                Código
+                              </label>
                               <input
-                                type="text"
-                                name="codigo"
-                                value={formData.codigo}
+                                name="codigo_interno"
+                                value={formData.codigo_interno}
                                 onChange={handleChange}
-                                className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                                className="w-full p-4 bg-gray-50 border rounded-2xl font-bold"
                               />
                             </div>
                           </div>
-
-                          <div className="space-y-1.5 md:col-span-2">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Razón Social</label>
+                          <div className="md:col-span-2 space-y-2">
+                            <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                              Razón Social
+                            </label>
                             <input
-                              type="text"
-                              name="razonSocial"
-                              value={formData.razonSocial}
+                              name="razon_social"
+                              value={formData.razon_social}
                               onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                              className="w-full p-4 bg-gray-50 border rounded-2xl outline-none focus:border-[#D3AB80] font-bold"
                             />
                           </div>
-
-                          <div className="space-y-1.5 md:col-span-2">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Nombre Completo</label>
+                          <div className="md:col-span-2 space-y-2">
+                            <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                              Nombre Completo
+                            </label>
                             <input
-                              type="text"
-                              name="nombreCompleto"
-                              value={formData.nombreCompleto}
+                              name="nombre_completo"
+                              value={formData.nombre_completo}
                               onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                              className="w-full p-4 bg-gray-50 border rounded-2xl outline-none focus:border-[#D3AB80] font-bold"
                             />
                           </div>
-
-                          <div className="md:col-span-4 space-y-1.5 pt-2">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Roles</label>
-                            <div className="flex flex-wrap gap-6">
-                              <label className="flex items-center gap-2 cursor-pointer">
+                          <div className="md:col-span-4 flex flex-wrap gap-8 pt-4">
+                            {[
+                              "es_cliente",
+                              "es_empleado",
+                              "es_proveedor",
+                              "es_prospecto",
+                            ].map((role) => (
+                              <label
+                                key={role}
+                                className="flex items-center gap-3 cursor-pointer group"
+                              >
                                 <input
                                   type="checkbox"
-                                  checked={formData.roles.cliente}
-                                  onChange={(e) => setFormData({...formData, roles: {...formData.roles, cliente: e.target.checked}})}
-                                  className="w-4 h-4 text-[#D3AB80] rounded border-gray-300 focus:ring-[#D3AB80]"
+                                  name={role}
+                                  checked={(formData as any)[role]}
+                                  onChange={handleChange}
+                                  className="w-6 h-6 accent-[#D3AB80] rounded-lg"
                                 />
-                                <span className="text-sm font-medium text-[#472825]">Cliente</span>
+                                <span className="text-sm font-black text-[#472825] uppercase tracking-tighter opacity-70 group-hover:opacity-100">
+                                  {role.split("_")[1]}
+                                </span>
                               </label>
-                              <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.roles.empleado}
-                                  onChange={(e) => setFormData({...formData, roles: {...formData.roles, empleado: e.target.checked}})}
-                                  className="w-4 h-4 text-[#D3AB80] rounded border-gray-300 focus:ring-[#D3AB80]"
-                                />
-                                <span className="text-sm font-medium text-[#472825]">Empleado</span>
-                              </label>
-                              <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.roles.proveedor}
-                                  onChange={(e) => setFormData({...formData, roles: {...formData.roles, proveedor: e.target.checked}})}
-                                  className="w-4 h-4 text-[#D3AB80] rounded border-gray-300 focus:ring-[#D3AB80]"
-                                />
-                                <span className="text-sm font-medium text-[#472825]">Proveedor</span>
-                              </label>
-                              <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.roles.prospecto}
-                                  onChange={(e) => setFormData({...formData, roles: {...formData.roles, prospecto: e.target.checked}})}
-                                  className="w-4 h-4 text-[#D3AB80] rounded border-gray-300 focus:ring-[#D3AB80]"
-                                />
-                                <span className="text-sm font-medium text-[#472825]">Prospecto</span>
-                              </label>
-                            </div>
+                            ))}
                           </div>
                         </div>
                       </div>
 
-                      {/* TARJETA 2: Información de Contacto y Ubicación */}
-                      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                        <h3 className="text-lg font-bold text-[#472825] mb-4">Información de Contacto y Ubicación</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Vendedor Asignado</label>
+                      {/* CONTACTO Y UBICACIÓN */}
+                      <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-6">
+                        <div className="flex items-center gap-3 text-[#D3AB80] mb-2">
+                          <MapPin size={20} />
+                          <h3 className="font-black text-sm uppercase tracking-tighter">
+                            Contacto y Ubicación
+                          </h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                              País
+                            </label>
                             <select
-                              name="vendedor"
-                              value={formData.vendedor}
-                              onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                            >
-                              <option value="">Seleccionar...</option>
-                              <option value="Vendedor 1">Vendedor 1</option>
-                              <option value="Vendedor 2">Vendedor 2</option>
-                            </select>
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">E-mail</label>
-                            <input
-                              type="email"
-                              name="correo"
-                              value={formData.correo}
-                              onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                            />
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">E-mail Novedades</label>
-                            <input
-                              type="email"
-                              name="correoNovedades"
-                              value={formData.correoNovedades}
-                              onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                            />
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Teléfono 1</label>
-                            <input
-                              type="text"
-                              name="telefono1"
-                              value={formData.telefono1}
-                              onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Teléfono 2</label>
-                            <input
-                              type="text"
-                              name="telefono2"
-                              value={formData.telefono2}
-                              onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Celular</label>
-                            <input
-                              type="text"
-                              name="celular"
-                              value={formData.celular}
-                              onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                            />
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">País</label>
-                            <select
-                              name="pais"
                               value={selectedCountryCode}
-                              onChange={(e) => {
-                                const countryCode = e.target.value;
-                                const countryName = e.target.options[e.target.selectedIndex].text;
-                                setSelectedCountryCode(countryCode);
-                                setSelectedStateCode("");
-                                setFormData({
-                                  ...formData,
-                                  pais: countryName,
-                                  departamento: "",
-                                  ciudad: "",
-                                });
-                              }}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
+                              onChange={(e) =>
+                                setSelectedCountryCode(e.target.value)
+                              }
+                              className="w-full p-4 bg-gray-50 border rounded-2xl font-bold"
                             >
-                              <option value="">Seleccionar...</option>
-                              {Country.getAllCountries().map((country) => (
-                                <option key={country.isoCode} value={country.isoCode}>
-                                  {country.name}
+                              {Country.getAllCountries().map((c) => (
+                                <option key={c.isoCode} value={c.isoCode}>
+                                  {c.name}
                                 </option>
                               ))}
                             </select>
                           </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Departamento</label>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                              Departamento
+                            </label>
                             <select
-                              name="departamento"
                               value={selectedStateCode}
-                              disabled={!selectedCountryCode}
-                              onChange={(e) => {
-                                const stateCode = e.target.value;
-                                const stateName = e.target.options[e.target.selectedIndex].text;
-                                setSelectedStateCode(stateCode);
-                                setFormData({
-                                  ...formData,
-                                  departamento: stateName,
-                                  ciudad: "",
-                                });
-                              }}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825] disabled:opacity-50"
+                              onChange={(e) =>
+                                setSelectedStateCode(e.target.value)
+                              }
+                              className="w-full p-4 bg-gray-50 border rounded-2xl font-bold"
                             >
                               <option value="">Seleccionar...</option>
-                              {State.getStatesOfCountry(selectedCountryCode).map((state) => (
-                                <option key={state.isoCode} value={state.isoCode}>
-                                  {state.name}
+                              {State.getStatesOfCountry(
+                                selectedCountryCode,
+                              ).map((s) => (
+                                <option key={s.isoCode} value={s.isoCode}>
+                                  {s.name}
                                 </option>
                               ))}
                             </select>
                           </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Ciudad</label>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                              Ciudad
+                            </label>
                             <select
                               name="ciudad"
                               value={formData.ciudad}
-                              disabled={!selectedStateCode}
-                              onChange={(e) => {
-                                const cityName = e.target.value;
-                                setFormData({ ...formData, ciudad: cityName });
-                              }}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825] disabled:opacity-50"
+                              onChange={handleChange}
+                              className="w-full p-4 bg-gray-50 border rounded-2xl font-bold"
                             >
                               <option value="">Seleccionar...</option>
-                              {City.getCitiesOfState(selectedCountryCode, selectedStateCode).map((city) => (
-                                <option key={city.name} value={city.name}>
-                                  {city.name}
+                              {City.getCitiesOfState(
+                                selectedCountryCode,
+                                selectedStateCode,
+                              ).map((c) => (
+                                <option key={c.name} value={c.name}>
+                                  {c.name}
                                 </option>
                               ))}
                             </select>
                           </div>
-
-                          <div className="space-y-1.5 md:col-span-3">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Dirección Fiscal</label>
-                            <input
-                              type="text"
-                              name="direccionFiscal"
-                              value={formData.direccionFiscal}
-                              onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                            />
-                          </div>
-                          <div className="space-y-1.5 md:col-span-3">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Dirección Despachos</label>
-                            <input
-                              type="text"
-                              name="direccionDespachos"
-                              value={formData.direccionDespachos}
-                              onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* TARJETA 3: Comercial y Ventas */}
-                      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                        <h3 className="text-lg font-bold text-[#472825] mb-4">Comercial y Ventas</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Cumpleaños (Día/Mes)</label>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                name="cumpleDia"
-                                value={formData.cumpleDia}
-                                onChange={handleChange}
-                                placeholder="DD"
-                                className="w-1/2 bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825] text-center"
-                              />
-                              <input
-                                type="text"
-                                name="cumpleMes"
-                                value={formData.cumpleMes}
-                                onChange={handleChange}
-                                placeholder="MM"
-                                className="w-1/2 bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825] text-center"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Cartera</label>
-                            <select
-                              name="cartera"
-                              value={formData.cartera}
-                              onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                            >
-                              <option value="">Seleccionar...</option>
-                              <option value="Contado">Contado</option>
-                              <option value="30 Días">30 Días</option>
-                              <option value="60 Días">60 Días</option>
-                            </select>
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Forma de Pago</label>
-                            <select
-                              name="formaPago"
-                              value={formData.formaPago}
-                              onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                            >
-                              <option value="">Seleccionar...</option>
-                              <option value="Efectivo">Efectivo</option>
-                              <option value="Transferencia">Transferencia</option>
-                              <option value="Tarjeta">Tarjeta</option>
-                            </select>
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Nivel de Precio</label>
-                            <select
-                              name="nivelPrecio"
-                              value={formData.nivelPrecio}
-                              onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                            >
-                              <option value="">Seleccionar...</option>
-                              <option value="Detal">Detal</option>
-                              <option value="Mayorista">Mayorista</option>
-                              <option value="Distribuidor">Distribuidor</option>
-                            </select>
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">Clasificación</label>
-                            <select
-                              name="clasificacion"
-                              value={formData.clasificacion}
-                              onChange={handleChange}
-                              className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                            >
-                              <option value="">Seleccionar...</option>
-                              <option value="A">A</option>
-                              <option value="B">B</option>
-                              <option value="C">C</option>
-                            </select>
-                          </div>
-
-                          <div className="space-y-1.5 flex items-end pb-3">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                name="aplicaCredito"
-                                checked={formData.aplicaCredito}
-                                onChange={(e) => setFormData({...formData, aplicaCredito: e.target.checked})}
-                                className="w-4 h-4 text-[#D3AB80] rounded border-gray-300 focus:ring-[#D3AB80]"
-                              />
-                              <span className="text-sm font-medium text-[#472825]">Aplica Cupo Crédito</span>
+                          <div className="md:col-span-3 space-y-2">
+                            <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                              Dirección Fiscal
                             </label>
+                            <input
+                              name="direccion_fiscal"
+                              value={formData.direccion_fiscal}
+                              onChange={handleChange}
+                              className="w-full p-4 bg-gray-50 border rounded-2xl font-bold"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                              Email
+                            </label>
+                            <input
+                              name="email"
+                              value={formData.email}
+                              onChange={handleChange}
+                              placeholder="Email corporativo"
+                              className="w-full p-4 bg-gray-50 border rounded-2xl font-bold"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                              Celular
+                            </label>
+                            <input
+                              name="celular"
+                              value={formData.celular}
+                              onChange={handleChange}
+                              placeholder="Celular de contacto"
+                              className="w-full p-4 bg-gray-50 border rounded-2xl font-bold"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                              Vendedor
+                            </label>
+                            <select
+                              name="vendedor_asignado"
+                              value={formData.vendedor_asignado}
+                              onChange={handleChange}
+                              className="w-full p-4 bg-gray-50 border rounded-2xl font-bold"
+                            >
+                              <option value="">Vendedor Asignado...</option>
+                              <option value="V1">Vendedor 1</option>
+                              <option value="V2">Vendedor 2</option>
+                            </select>
                           </div>
                         </div>
                       </div>
+                    </>
+                  )}
 
-                      {/* TARJETA 4: Observaciones */}
-                      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                        <h3 className="text-lg font-bold text-[#472825] mb-4">Observaciones DOHA 18K</h3>
-                        <div className="space-y-1.5">
-                          <textarea
-                            name="observaciones"
-                            value={formData.observaciones}
-                            onChange={(e) => setFormData({...formData, observaciones: e.target.value})}
-                            rows={4}
-                            className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825] resize-none"
-                            placeholder="Notas internas..."
-                          ></textarea>
+                  {activeTab === "Comercial" && (
+                    <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-6">
+                      <div className="flex items-center gap-3 text-[#D3AB80] mb-2">
+                        <CreditCard size={20} />
+                        <h3 className="font-black text-sm uppercase tracking-tighter">
+                          Comercial y Ventas
+                        </h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                            Forma de Pago
+                          </label>
+                          <select
+                            name="forma_pago"
+                            value={formData.forma_pago}
+                            onChange={handleChange}
+                            className="w-full p-4 bg-gray-50 border rounded-2xl font-bold"
+                          >
+                            <option value="">Seleccionar...</option>
+                            <option value="Contado">Contado</option>
+                            <option value="Credito">Crédito</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                            Nivel de Precio
+                          </label>
+                          <select
+                            name="nivel_precio"
+                            value={formData.nivel_precio}
+                            onChange={handleChange}
+                            className="w-full p-4 bg-gray-50 border rounded-2xl font-bold"
+                          >
+                            <option value="">Seleccionar...</option>
+                            <option value="Detal">Detal</option>
+                            <option value="Mayorista">Mayorista</option>
+                            <option value="Distribuidor">Distribuidor</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase text-gray-400 ml-1">
+                            Cartera
+                          </label>
+                          <input
+                            name="cartera"
+                            value={formData.cartera}
+                            onChange={handleChange}
+                            className="w-full p-4 bg-gray-50 border rounded-2xl font-bold"
+                          />
+                        </div>
+                        <div className="flex items-center gap-3 pt-6">
+                          <input
+                            type="checkbox"
+                            name="aplica_cupo_credito"
+                            checked={formData.aplica_cupo_credito}
+                            onChange={handleChange}
+                            className="w-6 h-6 accent-[#D3AB80]"
+                          />
+                          <span className="text-xs font-black uppercase text-gray-500">
+                            Aplica Cupo Crédito
+                          </span>
                         </div>
                       </div>
                     </div>
-                  ) : (
-                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm min-h-[200px] flex items-center justify-center">
-                      <p className="text-gray-500 font-medium">No hay sucursales registradas.</p>
+                  )}
+
+                  {activeTab === "Otros" && (
+                    <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-6">
+                      <div className="flex items-center gap-3 text-[#D3AB80] mb-2">
+                        <ClipboardList size={20} />
+                        <h3 className="font-black text-sm uppercase tracking-tighter">
+                          Observaciones DOHA 18K
+                        </h3>
+                      </div>
+                      <textarea
+                        name="observaciones"
+                        value={formData.observaciones}
+                        onChange={handleChange}
+                        rows={5}
+                        className="w-full p-6 bg-gray-50 border rounded-[2rem] font-bold outline-none focus:border-[#D3AB80]"
+                        placeholder="Escribe notas internas aquí..."
+                      ></textarea>
+                    </div>
+                  )}
+
+                  {activeTab === "Sucursales" && (
+                    <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm min-h-[300px] flex items-center justify-center">
+                      <p className="text-gray-400 font-bold italic">
+                        Módulo de Sucursales en mantenimiento...
+                      </p>
                     </div>
                   )}
                 </form>
               </div>
 
-              {/* FOOTER FIXED */}
-              <div className="bg-white px-8 py-5 border-t border-gray-100 flex items-center justify-end gap-3 shrink-0">
+              {/* FOOTER DEL MODAL */}
+              <div className="p-8 bg-white border-t flex justify-end gap-4 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-6 py-2.5 text-sm font-bold text-gray-500 hover:text-[#472825] hover:bg-gray-50 rounded-xl transition-all"
+                  className="px-8 py-4 text-sm font-black text-gray-400 hover:text-[#472825] transition-all"
                 >
-                  Cancelar
+                  CANCELAR
                 </button>
                 <button
                   type="submit"
                   form="terceroForm"
                   disabled={isSaving}
-                  className="bg-[#D3AB80] text-white px-8 py-2.5 rounded-xl text-sm font-bold hover:bg-[#b8946d] transition-all shadow-md disabled:opacity-50"
+                  className="bg-[#472825] text-white px-12 py-4 rounded-2xl font-black text-sm shadow-2xl hover:bg-black transition-all flex items-center gap-2"
                 >
-                  {isSaving ? "Guardando..." : "Guardar Tercero"}
+                  {isSaving ? "PROCESANDO..." : "GUARDAR TERCERO"}
                 </button>
               </div>
             </motion.div>
-          </>
+          </div>
         )}
       </AnimatePresence>
     </div>

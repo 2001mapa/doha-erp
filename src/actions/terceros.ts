@@ -1,36 +1,49 @@
-import { supabase } from '@/src/lib/supabaseClient'
+'use server';
 
+import { supabase } from '@/src/lib/supabaseClient';
+
+// 1. OBTENER TERCEROS
 export async function getTerceros() {
   try {
-    const { data, error } = await supabase.from('terceros').select('*')
-    if (error) throw error
-    return data
-  } catch (error) {
-    console.error('Error fetching terceros:', error)
-    return []
+    const { data, error } = await supabase
+      .from('terceros')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    // IMPORTANTE: Devolvemos el objeto EXACTO que espera el page.tsx
+    return { data: data || [], error: error ? error.message : null };
+  } catch (err: any) {
+    return { data: [], error: err.message };
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createTercero(data: any) {
+// 2. CREAR TERCERO
+export async function createTercero(datos: any) {
   try {
-    // Exclude id to let Supabase auto-generate it if necessary, though
-    // it depends on how the DB is configured. But since the original code
-    // appended an ID locally, we'll strip any empty string id.
-    const insertData = { ...data };
-    if (insertData.id === "") {
-        delete insertData.id;
-    }
+    const { data, error } = await supabase
+      .from('terceros')
+      .insert([datos])
+      .select()
+      .single();
 
-    console.log("Payload enviado a Supabase:", insertData);
-    const { data: result, error } = await supabase.from('terceros').insert([insertData]).select();
-    if (error) {
-      console.error('Error exacto de Supabase:', error.message, error.details, error.hint);
-      throw new Error(error.message);
-    }
-    return result;
-  } catch (error) {
-    console.error('Error creating tercero:', error)
-    throw error
+    return { data, error: error ? error.message : null };
+  } catch (err: any) {
+    return { data: null, error: err.message };
+  }
+}
+
+// 3. EDITAR TERCERO (Esta es la que faltaba y causaba el error 2305)
+export async function updateTercero(id: string, updates: any) {
+  try {
+    const { data, error } = await supabase
+      .from('terceros')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    return { data, error: error ? error.message : null };
+  } catch (err: any) {
+    return { data: null, error: err.message };
   }
 }

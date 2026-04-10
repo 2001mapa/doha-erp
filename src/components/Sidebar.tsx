@@ -65,13 +65,6 @@ const menuItems = [
         icon: <ShoppingBag size={16} />,
         href: "/admin/productos",
       },
-      { name: "Unidades", href: "/admin/productos/unidades" },
-      { name: "Categoría", href: "/admin/productos/categoria" },
-      { name: "Bodegas", href: "/admin/productos/bodegas" },
-      {
-        name: "Clasificación Contable",
-        href: "/admin/productos/clasificacion",
-      },
     ],
   },
   {

@@ -1,74 +1,48 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Plus, Search, Edit, Trash2, X, Percent, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-type Vendedor = {
-  id: string;
-  codigo: string;
-  descripcion: string;
-  tercero: string;
-  cVenta: number;
-  cRecaudo: number;
-  vendedor: boolean;
-  recaudador: boolean;
-  atiende: boolean;
-  permisos: boolean[];
-};
-
-// Mock inicial
-const initialVendedores: Vendedor[] = [
-  {
-    id: "1",
-    codigo: "101",
-    descripcion: "VENDEDOR PUNTO DE VENTA",
-    tercero: "98667545 - MIGUEL RESTREPO",
-    cVenta: 0.0,
-    cRecaudo: 0.0,
-    vendedor: false,
-    recaudador: false,
-    atiende: false,
-    permisos: [false, false, false, false, false],
-  },
-  {
-    id: "2",
-    codigo: "106",
-    descripcion: "FABER ARISTIZABAL",
-    tercero: "79887455 - FABER ARISTIZABAL",
-    cVenta: 5.0,
-    cRecaudo: 0.0,
-    vendedor: false,
-    recaudador: false,
-    atiende: false,
-    permisos: [false, false, false, false, false],
-  },
-];
-
-const TERCEROS_MOCK = [
-  "98667545 - MIGUEL RESTREPO",
-  "79887455 - FABER ARISTIZABAL",
-  "12345678 - JUAN PEREZ",
-  "87654321 - MARIA GOMEZ",
-];
+import {
+  getVendedores,
+  createVendedor,
+  updateVendedor,
+  deleteVendedor,
+} from "@/src/actions/vendedores";
+import { getTerceros } from "@/src/actions/terceros"; // Para el selector de terceros real
 
 export default function VendedoresPage() {
-  const [vendedores, setVendedores] = useState<Vendedor[]>(initialVendedores);
+  const [vendedores, setVendedores] = useState<any[]>([]);
+  const [tercerosList, setTercerosList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const [formData, setFormData] = useState<Vendedor>({
+  const [formData, setFormData] = useState({
     id: "",
     codigo: "",
     descripcion: "",
-    tercero: TERCEROS_MOCK[0],
-    cVenta: 0,
-    cRecaudo: 0,
-    vendedor: false,
-    recaudador: false,
-    atiende: false,
+    tercero_id: "",
+    c_venta: 0,
+    c_recaudo: 0,
+    es_vendedor: false,
+    es_recaudador: false,
+    es_atiende: false,
     permisos: [false, false, false, false, false],
   });
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    const [vRes, tRes] = await Promise.all([getVendedores(), getTerceros()]);
+    if (vRes.data) setVendedores(vRes.data);
+    if (tRes.data) setTercerosList(tRes.data);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleOpenNew = () => {
     setIsEditing(false);
@@ -76,46 +50,54 @@ export default function VendedoresPage() {
       id: "",
       codigo: "",
       descripcion: "",
-      tercero: TERCEROS_MOCK[0],
-      cVenta: 0,
-      cRecaudo: 0,
-      vendedor: false,
-      recaudador: false,
-      atiende: false,
+      tercero_id: tercerosList[0]?.id || "",
+      c_venta: 0,
+      c_recaudo: 0,
+      es_vendedor: false,
+      es_recaudador: false,
+      es_atiende: false,
       permisos: [false, false, false, false, false],
     });
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (vendedor: Vendedor) => {
+  const handleOpenEdit = (v: any) => {
     setIsEditing(true);
     setFormData({
-      ...vendedor,
-      permisos: vendedor.permisos || [false, false, false, false, false],
+      id: v.id,
+      codigo: v.codigo,
+      descripcion: v.descripcion,
+      tercero_id: v.tercero_id,
+      c_venta: v.c_venta,
+      c_recaudo: v.c_recaudo,
+      es_vendedor: v.es_vendedor,
+      es_recaudador: v.es_recaudador,
+      es_atiende: v.es_atiende,
+      permisos: v.permisos || [false, false, false, false, false],
     });
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("¿Estás seguro de eliminar este vendedor?")) {
-      setVendedores(vendedores.filter((v) => v.id !== id));
+      await deleteVendedor(id);
+      fetchData();
     }
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const target = e.target as HTMLInputElement;
     const { name, value, type, checked } = target;
-
     setFormData({
       ...formData,
       [name]:
         type === "checkbox"
           ? checked
           : type === "number"
-          ? parseFloat(value) || 0
-          : value,
+            ? parseFloat(value) || 0
+            : value,
     });
   };
 
@@ -125,29 +107,39 @@ export default function VendedoresPage() {
     setFormData({ ...formData, permisos: newPermisos });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
+    const { id, ...payload } = formData;
+
     if (isEditing) {
-      setVendedores(
-        vendedores.map((v) => (v.id === formData.id ? { ...formData } : v))
-      );
+      await updateVendedor(id, payload);
     } else {
-      setVendedores([
-        ...vendedores,
-        {
-          ...formData,
-          id: Date.now().toString(),
-        },
-      ]);
+      await createVendedor(payload);
     }
+
+    await fetchData();
+    setIsSaving(false);
     setIsModalOpen(false);
   };
 
-  const filteredVendedores = vendedores.filter(
-    (v) =>
-      v.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.tercero.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredVendedores = useMemo(() => {
+    return vendedores.filter((v) => {
+      const nombreTercero =
+        v.terceros?.nombre_completo || v.terceros?.razon_social || "";
+      return (
+        v.descripcion?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        nombreTercero.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    });
+  }, [vendedores, searchTerm]);
+
+  if (isLoading)
+    return (
+      <div className="flex h-screen items-center justify-center font-black text-[#472825]">
+        Cargando Vendedores...
+      </div>
+    );
 
   return (
     <div className="p-8 max-w-6xl mx-auto w-full bg-[#fdfbf9] min-h-screen text-[#472825]">
@@ -165,8 +157,7 @@ export default function VendedoresPage() {
           onClick={handleOpenNew}
           className="flex items-center gap-2 bg-[#D3AB80] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#b8946d] transition-all shadow-md shadow-[#D3AB80]/20"
         >
-          <Plus size={18} strokeWidth={2.5} />
-          Nuevo Vendedor
+          <Plus size={18} strokeWidth={2.5} /> Nuevo Vendedor
         </button>
       </div>
 
@@ -214,80 +205,65 @@ export default function VendedoresPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredVendedores.length > 0 ? (
-                filteredVendedores.map((vendedor) => (
-                  <tr
-                    key={vendedor.id}
-                    className="hover:bg-gray-50/50 transition-colors group"
-                  >
-                    <td className="p-5 text-sm font-bold text-[#472825]">
-                      {vendedor.codigo}
-                    </td>
-                    <td className="p-5 text-sm font-medium text-gray-600">
-                      {vendedor.descripcion}
-                    </td>
-                    <td className="p-5 text-sm font-medium text-gray-600">
-                      {vendedor.tercero}
-                    </td>
-                    <td className="p-5 text-sm font-medium text-gray-600">
-                      {vendedor.cVenta.toFixed(1)}%
-                    </td>
-                    <td className="p-5 text-sm font-medium text-gray-600">
-                      {vendedor.cRecaudo.toFixed(1)}%
-                    </td>
-                    <td className="p-5">
-                      <div className="flex justify-center gap-3">
-                        <button
-                          onClick={() => handleOpenEdit(vendedor)}
-                          className="p-2 text-[#D3AB80] hover:bg-[#D3AB80]/10 rounded-xl transition-colors tooltip"
-                          title="Editar"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(vendedor.id)}
-                          className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors tooltip"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="p-8 text-center text-gray-500 font-medium"
-                  >
-                    No se encontraron vendedores.
+              {filteredVendedores.map((v) => (
+                <tr
+                  key={v.id}
+                  className="hover:bg-gray-50/50 transition-colors group"
+                >
+                  <td className="p-5 text-sm font-bold text-[#472825]">
+                    {v.codigo}
+                  </td>
+                  <td className="p-5 text-sm font-medium text-gray-600">
+                    {v.descripcion}
+                  </td>
+                  <td className="p-5 text-sm font-medium text-gray-600">
+                    {v.terceros?.nombre_completo || v.terceros?.razon_social}
+                  </td>
+                  <td className="p-5 text-sm font-medium text-gray-600">
+                    {v.c_venta}%
+                  </td>
+                  <td className="p-5 text-sm font-medium text-gray-600">
+                    {v.c_recaudo}%
+                  </td>
+                  <td className="p-5">
+                    <div className="flex justify-center gap-3">
+                      <button
+                        onClick={() => handleOpenEdit(v)}
+                        className="p-2 text-[#D3AB80] hover:bg-[#D3AB80]/10 rounded-xl transition-colors"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(v.id)}
+                        className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              )}
+              ))}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* --- MODAL DE CREACIÓN / EDICIÓN --- */}
+      {/* --- MODAL --- */}
       <AnimatePresence>
         {isModalOpen && (
-          <>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsModalOpen(false)}
-              className="fixed inset-0 z-[100] bg-zinc-950/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm"
             />
-
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-full max-w-4xl bg-white rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]"
+              className="relative top-0 left-0 translate-x-0 translate-y-0 w-full max-w-4xl bg-white rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]"
             >
               <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                 <div>
@@ -295,9 +271,7 @@ export default function VendedoresPage() {
                     {isEditing ? "Editar Vendedor" : "Registrar Vendedor"}
                   </h2>
                   <p className="text-xs font-medium text-gray-500 mt-1">
-                    {isEditing
-                      ? "Modifica los parámetros comerciales del vendedor."
-                      : "Configura los parámetros comerciales para el nuevo vendedor."}
+                    Configura los parámetros comerciales del vendedor.
                   </p>
                 </div>
                 <button
@@ -314,7 +288,6 @@ export default function VendedoresPage() {
                   onSubmit={handleSubmit}
                   className="space-y-8"
                 >
-                  {/* Fila 1 (Identificación) */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="col-span-1 space-y-1.5">
                       <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
@@ -327,10 +300,8 @@ export default function VendedoresPage() {
                         onChange={handleChange}
                         required
                         className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                        placeholder="Ej. 101"
                       />
                     </div>
-
                     <div className="col-span-1 space-y-1.5">
                       <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
                         Descripción
@@ -342,52 +313,47 @@ export default function VendedoresPage() {
                         onChange={handleChange}
                         required
                         className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
-                        placeholder="Ej. Vendedor Zona Sur"
                       />
                     </div>
-
                     <div className="col-span-1 md:col-span-2 space-y-1.5">
                       <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
                         Tercero
                       </label>
                       <select
-                        name="tercero"
-                        value={formData.tercero}
+                        name="tercero_id"
+                        value={formData.tercero_id}
                         onChange={handleChange}
-                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825] appearance-none"
+                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 px-4 text-sm font-medium outline-none transition-all text-[#472825]"
                       >
-                        {TERCEROS_MOCK.map((t, idx) => (
-                          <option key={idx} value={t}>
-                            {t}
+                        {tercerosList.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.numero_identificacion} -{" "}
+                            {t.nombre_completo || t.razon_social}
                           </option>
                         ))}
                       </select>
                     </div>
                   </div>
 
-                  {/* Fila 2 (Comisiones y Roles) */}
                   <div className="border border-gray-200 rounded-2xl p-6 bg-gray-50/30">
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
+                      {/* Checkbox Vendedor */}
                       <div className="flex flex-col items-center justify-end pb-3">
                         <label className="flex flex-col items-center gap-2 cursor-pointer group">
                           <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
                             Vendedor
                           </span>
                           <div
-                            className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${
-                              formData.vendedor
-                                ? "bg-[#D3AB80] border-[#D3AB80]"
-                                : "bg-white border-gray-300 group-hover:border-[#D3AB80]"
-                            }`}
+                            className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${formData.es_vendedor ? "bg-[#D3AB80] border-[#D3AB80]" : "bg-white border-gray-300"}`}
                           >
-                            {formData.vendedor && (
+                            {formData.es_vendedor && (
                               <Check size={14} className="text-white" />
                             )}
                           </div>
                           <input
                             type="checkbox"
-                            name="vendedor"
-                            checked={formData.vendedor}
+                            name="es_vendedor"
+                            checked={formData.es_vendedor}
                             onChange={handleChange}
                             className="hidden"
                           />
@@ -396,19 +362,16 @@ export default function VendedoresPage() {
 
                       <div className="space-y-1.5">
                         <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                          Comisión en Venta
+                          Comisión Venta
                         </label>
                         <div className="relative">
                           <input
                             type="number"
                             step="0.1"
-                            min="0"
-                            name="cVenta"
-                            value={formData.cVenta}
+                            name="c_venta"
+                            value={formData.c_venta}
                             onChange={handleChange}
-                            required
-                            className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-4 pr-10 text-sm font-medium outline-none transition-all text-[#472825]"
-                            placeholder="0.0"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-4 pr-10 text-sm font-medium outline-none"
                           />
                           <Percent
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -417,26 +380,23 @@ export default function VendedoresPage() {
                         </div>
                       </div>
 
+                      {/* Checkbox Recaudador */}
                       <div className="flex flex-col items-center justify-end pb-3">
                         <label className="flex flex-col items-center gap-2 cursor-pointer group">
                           <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
                             Recaudador
                           </span>
                           <div
-                            className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${
-                              formData.recaudador
-                                ? "bg-[#D3AB80] border-[#D3AB80]"
-                                : "bg-white border-gray-300 group-hover:border-[#D3AB80]"
-                            }`}
+                            className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${formData.es_recaudador ? "bg-[#D3AB80] border-[#D3AB80]" : "bg-white border-gray-300"}`}
                           >
-                            {formData.recaudador && (
+                            {formData.es_recaudador && (
                               <Check size={14} className="text-white" />
                             )}
                           </div>
                           <input
                             type="checkbox"
-                            name="recaudador"
-                            checked={formData.recaudador}
+                            name="es_recaudador"
+                            checked={formData.es_recaudador}
                             onChange={handleChange}
                             className="hidden"
                           />
@@ -445,19 +405,16 @@ export default function VendedoresPage() {
 
                       <div className="space-y-1.5">
                         <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold ml-1">
-                          Comisión en Recaudo
+                          Comisión Recaudo
                         </label>
                         <div className="relative">
                           <input
                             type="number"
                             step="0.1"
-                            min="0"
-                            name="cRecaudo"
-                            value={formData.cRecaudo}
+                            name="c_recaudo"
+                            value={formData.c_recaudo}
                             onChange={handleChange}
-                            required
-                            className="w-full bg-gray-50 border border-gray-200 focus:border-[#D3AB80] focus:bg-white rounded-xl py-3 pl-4 pr-10 text-sm font-medium outline-none transition-all text-[#472825]"
-                            placeholder="0.0"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-4 pr-10 text-sm font-medium outline-none"
                           />
                           <Percent
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -466,26 +423,23 @@ export default function VendedoresPage() {
                         </div>
                       </div>
 
+                      {/* Checkbox Atiende */}
                       <div className="flex flex-col items-center justify-end pb-3">
                         <label className="flex flex-col items-center gap-2 cursor-pointer group">
                           <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
                             Atiende
                           </span>
                           <div
-                            className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${
-                              formData.atiende
-                                ? "bg-[#D3AB80] border-[#D3AB80]"
-                                : "bg-white border-gray-300 group-hover:border-[#D3AB80]"
-                            }`}
+                            className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${formData.es_atiende ? "bg-[#D3AB80] border-[#D3AB80]" : "bg-white border-gray-300"}`}
                           >
-                            {formData.atiende && (
+                            {formData.es_atiende && (
                               <Check size={14} className="text-white" />
                             )}
                           </div>
                           <input
                             type="checkbox"
-                            name="atiende"
-                            checked={formData.atiende}
+                            name="es_atiende"
+                            checked={formData.es_atiende}
                             onChange={handleChange}
                             className="hidden"
                           />
@@ -494,7 +448,6 @@ export default function VendedoresPage() {
                     </div>
                   </div>
 
-                  {/* Fila 3 (Permisos / Ajustes Específicos) */}
                   <div className="flex items-start gap-8 mt-6">
                     <div className="w-1/3">
                       <h3 className="text-sm font-bold text-[#472825]">
@@ -508,60 +461,52 @@ export default function VendedoresPage() {
                         "Mis Terceros",
                         "Mis Pedidos",
                         "Usa Documentos Específicos",
-                      ].map((label, index) => {
-                        const checked = formData.permisos[index];
-                        return (
-                          <label
-                            key={index}
-                            className="flex items-center justify-between cursor-pointer group w-64"
+                      ].map((label, index) => (
+                        <label
+                          key={index}
+                          className="flex items-center justify-between cursor-pointer group w-64"
+                        >
+                          <span className="text-sm font-medium text-gray-700">
+                            {label}
+                          </span>
+                          <div
+                            className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${formData.permisos[index] ? "bg-[#D3AB80] border-[#D3AB80]" : "bg-white border-gray-300"}`}
                           >
-                            <span className="text-sm font-medium text-gray-700">
-                              {label}
-                            </span>
-                            <div
-                              className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-                                checked
-                                  ? "bg-[#D3AB80] border-[#D3AB80]"
-                                  : "bg-white border-gray-300 group-hover:border-[#D3AB80]"
-                              }`}
-                            >
-                              {checked && (
-                                <Check size={12} className="text-white" />
-                              )}
-                            </div>
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => handlePermisoChange(index)}
-                              className="hidden"
-                            />
-                          </label>
-                        );
-                      })}
+                            {formData.permisos[index] && (
+                              <Check size={12} className="text-white" />
+                            )}
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={formData.permisos[index]}
+                            onChange={() => handlePermisoChange(index)}
+                            className="hidden"
+                          />
+                        </label>
+                      ))}
                     </div>
                   </div>
                 </form>
               </div>
 
-              {/* Botones del Modal */}
               <div className="px-8 py-5 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between">
                 <button
-                  type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 text-sm font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                  className="px-5 py-2.5 text-sm font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-xl"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   form="vendedor-form"
-                  className="bg-[#D3AB80] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#b8946d] transition-all shadow-md"
+                  disabled={isSaving}
+                  className="bg-[#D3AB80] text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md"
                 >
-                  Guardar
+                  {isSaving ? "Guardando..." : "Guardar"}
                 </button>
               </div>
             </motion.div>
-          </>
+          </div>
         )}
       </AnimatePresence>
     </div>

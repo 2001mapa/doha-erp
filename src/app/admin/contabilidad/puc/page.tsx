@@ -1,108 +1,61 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, FolderPlus, Download, RefreshCw, Folder, FolderOpen, FileText, Search } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import {
+  Plus,
+  FolderPlus,
+  Download,
+  RefreshCw,
+  Folder,
+  FolderOpen,
+  FileText,
+  Search,
+  X,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getPUC, createCuentaPUC } from "@/src/actions/puc";
 
 type AccountNode = {
   code: string;
   name: string;
-  isAuxiliary?: boolean;
+  nivel: string;
   children?: AccountNode[];
 };
 
-const initialData: AccountNode[] = [
-  {
-    code: "1",
-    name: "ACTIVOS",
-    children: [
-      {
-        code: "11",
-        name: "ACTIVO CORRIENTE",
-        children: [
-          {
-            code: "1105",
-            name: "CAJA",
-            children: [
-              {
-                code: "110505",
-                name: "CAJA GENERAL",
-                children: [
-                  { code: "11050501", name: "CAJA DOHA PRINCIPAL", isAuxiliary: true },
-                  { code: "11050502", name: "CAJA MENOR", isAuxiliary: true },
-                ],
-              },
-            ],
-          },
-          {
-            code: "1110",
-            name: "BANCOS",
-            children: [
-              {
-                code: "111005",
-                name: "BANCOS NACIONALES",
-                children: [
-                  { code: "11100501", name: "BANCOLOMBIA DOHA", isAuxiliary: true },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-      {
-        code: "12",
-        name: "INVERSIONES",
-      },
-      {
-        code: "13",
-        name: "CUENTAS POR COBRAR",
-        children: [
-          {
-            code: "1305",
-            name: "CLIENTES",
-            children: [
-              {
-                code: "130505",
-                name: "CLIENTES NACIONALES",
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-];
-
-const TreeNode = ({ node, depth = 0 }: { node: AccountNode; depth?: number }) => {
+// COMPONENTE DE NODO (DISEÑO JULES)
+const TreeNode = ({
+  node,
+  depth = 0,
+}: {
+  node: AccountNode;
+  depth?: number;
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const hasChildren = node.children && node.children.length > 0;
-
-  const handleToggle = () => {
-    if (hasChildren) {
-      setIsOpen(!isOpen);
-    }
-  };
+  const isAuxiliary = node.nivel === "auxiliar";
 
   return (
     <div className="w-full">
       <div
-        onClick={handleToggle}
+        onClick={() => hasChildren && setIsOpen(!isOpen)}
         className={`flex items-center gap-2 py-2 px-3 rounded-lg cursor-pointer transition-colors ${
-          node.isAuxiliary ? "hover:bg-[#D3AB80]/20" : "hover:bg-zinc-100"
+          isAuxiliary ? "hover:bg-[#D3AB80]/10" : "hover:bg-zinc-100"
         }`}
         style={{ paddingLeft: `${depth * 1.5 + 1}rem`, color: "#472825" }}
       >
         <div className="flex-shrink-0 text-[#D3AB80]">
-          {node.isAuxiliary ? (
-            <div title="Auxiliar"><FileText size={18} /></div>
+          {isAuxiliary ? (
+            <FileText size={18} />
           ) : isOpen ? (
-            <div title="Carpeta Abierta"><FolderOpen size={18} /></div>
+            <FolderOpen size={18} />
           ) : (
-            <div title="Carpeta Cerrada"><Folder size={18} /></div>
+            <Folder size={18} />
           )}
         </div>
-        <span className="font-semibold text-sm w-24 flex-shrink-0">{node.code}</span>
-        <span className="text-sm truncate">{node.name}</span>
+        <span className="font-semibold text-sm w-24 flex-shrink-0">
+          {node.code}
+        </span>
+        <span className="text-sm truncate font-medium">{node.name}</span>
       </div>
 
       <AnimatePresence>
@@ -111,7 +64,6 @@ const TreeNode = ({ node, depth = 0 }: { node: AccountNode; depth?: number }) =>
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
             {node.children!.map((child) => (
@@ -125,117 +77,231 @@ const TreeNode = ({ node, depth = 0 }: { node: AccountNode; depth?: number }) =>
 };
 
 export default function PucPage() {
+  const [rawAccounts, setRawAccounts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [formData, setFormData] = useState({
+    codigo: "",
+    nombre: "",
+    nivel: "",
+  });
+
+  // CARGAR DATOS REALES
+  const fetchData = async () => {
+    setIsLoading(true);
+    const res = await getPUC();
+    if (res.data) setRawAccounts(res.data);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // LÓGICA DE CONSTRUCCIÓN DE ÁRBOL (ARQUITECTO)
+  const accountTree = useMemo(() => {
+    const nodes: Record<string, AccountNode> = {};
+    const tree: AccountNode[] = [];
+
+    // Filtrar por búsqueda antes de armar el árbol
+    const filtered = rawAccounts.filter(
+      (acc) =>
+        acc.codigo.includes(searchTerm) ||
+        acc.nombre.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+
+    filtered.forEach((acc) => {
+      nodes[acc.codigo] = {
+        code: acc.codigo,
+        name: acc.nombre,
+        nivel: acc.nivel,
+        children: [],
+      };
+    });
+
+    filtered.forEach((acc) => {
+      const parentCode =
+        acc.codigo.length <= 1
+          ? null
+          : acc.codigo.length === 2
+            ? acc.codigo[0]
+            : acc.codigo.length === 4
+              ? acc.codigo.substring(0, 2)
+              : acc.codigo.length === 6
+                ? acc.codigo.substring(0, 4)
+                : acc.codigo.substring(0, 6);
+
+      if (parentCode && nodes[parentCode]) {
+        nodes[parentCode].children?.push(nodes[acc.codigo]);
+      } else if (!parentCode || !nodes[parentCode]) {
+        tree.push(nodes[acc.codigo]);
+      }
+    });
+
+    return tree;
+  }, [rawAccounts, searchTerm]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    const res = await createCuentaPUC(formData);
+    if (!res.error) {
+      await fetchData();
+      setIsModalOpen(false);
+      setFormData({ codigo: "", nombre: "", nivel: "" });
+    } else {
+      alert(res.error);
+    }
+    setIsSaving(false);
+  };
+
+  if (isLoading)
+    return (
+      <div className="h-screen flex items-center justify-center font-black text-[#472825]">
+        Sincronizando PUC DOHA...
+      </div>
+    );
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full min-h-screen" style={{ backgroundColor: "#fdfbf9", color: "#472825" }}>
+    <div className="p-8 max-w-7xl mx-auto w-full min-h-screen bg-[#fdfbf9] text-[#472825]">
       {/* HEADER */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-black mb-1">Plan Único de Cuentas (PUC)</h1>
-        <p className="text-sm opacity-80">Catálogo de cuentas contables del sistema estructurado.</p>
+      <div className="mb-8 flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-black mb-1">
+            Plan Único de Cuentas (PUC)
+          </h1>
+          <p className="text-sm opacity-80">
+            Catálogo de cuentas contables del sistema estructurado.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1e3a8a] text-[#D3AB80] font-bold text-sm shadow-sm">
+            <Download size={18} /> Excel
+          </button>
+          <button
+            onClick={fetchData}
+            className="p-2.5 bg-zinc-800 text-[#D3AB80] rounded-xl shadow-sm"
+          >
+            <RefreshCw size={18} />
+          </button>
+        </div>
       </div>
 
       {/* TOOLBAR */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-zinc-100 flex flex-col md:flex-row gap-4 justify-between items-center mb-6">
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+      <div className="bg-white rounded-3xl p-4 shadow-sm border border-zinc-100 flex flex-col md:flex-row gap-4 justify-between items-center mb-6">
+        <div className="flex gap-3 w-full md:w-auto">
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-br from-[#D3AB80] to-[#b38e60] text-white font-bold shadow-lg shadow-[#D3AB80]/30 hover:shadow-xl hover:-translate-y-0.5 transition-all w-full sm:w-auto text-sm"
+            onClick={() => {
+              setFormData({ ...formData, nivel: "auxiliar" });
+              setIsModalOpen(true);
+            }}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-br from-[#D3AB80] to-[#b38e60] text-white font-bold shadow-lg"
           >
-            <Plus size={18} />
-            <span>Nuevo Auxiliar</span>
+            <Plus size={18} /> Nuevo Auxiliar
           </button>
-
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white border-2 border-[#D3AB80] text-[#D3AB80] font-bold shadow-sm hover:bg-[#fdfbf9] hover:-translate-y-0.5 transition-all w-full sm:w-auto text-sm"
+            onClick={() => {
+              setFormData({ ...formData, nivel: "" });
+              setIsModalOpen(true);
+            }}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white border-2 border-[#D3AB80] text-[#D3AB80] font-bold"
           >
-            <FolderPlus size={18} />
-            <span>Nueva Cuenta / Subcuenta</span>
-          </button>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          <button
-            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#1e3a8a] text-[#D3AB80] border border-[#1e3a8a] font-bold hover:bg-[#172554] hover:text-[#e8cdb0] shadow-sm hover:shadow-md transition-all w-full sm:w-auto text-sm"
-          >
-            <Download size={18} />
-            <span>Descargar Excel</span>
-          </button>
-
-          <button
-            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-800 text-[#D3AB80] border border-zinc-700 font-bold hover:bg-zinc-700 hover:text-[#e8cdb0] shadow-sm hover:shadow-md transition-all w-full sm:w-auto text-sm"
-          >
-            <RefreshCw size={18} />
-            <span>Regenerar</span>
+            <FolderPlus size={18} /> Nueva Cuenta
           </button>
         </div>
-      </div>
-
-      {/* TREE VIEW CONTROLS */}
-      <div className="bg-white rounded-t-2xl border-x border-t border-zinc-100 p-4 flex items-center justify-between">
         <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+          <Search
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
+            size={18}
+          />
           <input
             type="text"
             placeholder="Buscar por código o nombre..."
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-zinc-200 bg-zinc-50 focus:bg-white focus:border-[#D3AB80] focus:ring-2 focus:ring-[#D3AB80]/20 outline-none transition-all text-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 rounded-2xl border border-zinc-100 bg-zinc-50 focus:bg-white focus:border-[#D3AB80] outline-none transition-all text-sm font-medium"
           />
         </div>
       </div>
 
       {/* TREE VIEW CONTENT */}
-      <div className="bg-white rounded-b-2xl shadow-sm border border-zinc-100 p-4 min-h-[400px]">
-        <div className="w-full flex font-bold text-xs text-zinc-500 uppercase tracking-wider mb-2 px-3 border-b border-zinc-100 pb-2">
-          <div className="w-24 ml-8">Código</div>
+      <div className="bg-white rounded-[2rem] shadow-sm border border-zinc-100 p-6 min-h-[500px]">
+        <div className="w-full flex font-black text-[10px] text-zinc-400 uppercase tracking-widest mb-4 px-3 border-b border-zinc-50 pb-4">
+          <div className="w-24 ml-10">Código</div>
           <div>Nombre de Cuenta</div>
         </div>
-
-        <div className="flex flex-col py-2">
-          {initialData.map((node) => (
-            <TreeNode key={node.code} node={node} />
-          ))}
+        <div className="flex flex-col space-y-1">
+          {accountTree.length > 0 ? (
+            accountTree.map((node) => <TreeNode key={node.code} node={node} />)
+          ) : (
+            <p className="text-center py-20 text-zinc-400 italic">
+              No hay cuentas que coincidan con la búsqueda.
+            </p>
+          )}
         </div>
       </div>
 
-      {/* MODAL */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-zinc-100 animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
-              <h2 className="text-xl font-bold" style={{ color: "#472825" }}>Nueva Cuenta</h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-zinc-200 text-zinc-500 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6">
-              <form className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-zinc-500 mb-1.5 uppercase tracking-wide">Código de Cuenta</label>
+      {/* MODAL (DISEÑO JULES) */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-zinc-100"
+            >
+              <div className="px-8 py-6 border-b flex items-center justify-between bg-zinc-50/50">
+                <h2 className="text-xl font-black">Registrar Nueva Cuenta</h2>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-2 hover:bg-zinc-200 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleSave} className="p-8 space-y-5">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-zinc-400 ml-1">
+                    Código de Cuenta
+                  </label>
                   <input
-                    type="text"
+                    required
+                    value={formData.codigo}
+                    onChange={(e) =>
+                      setFormData({ ...formData, codigo: e.target.value })
+                    }
                     placeholder="Ej. 110505"
-                    className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:border-[#D3AB80] focus:ring-2 focus:ring-[#D3AB80]/20 outline-none transition-all text-sm"
+                    className="w-full p-4 bg-zinc-50 border rounded-2xl outline-none focus:border-[#D3AB80] font-bold text-sm"
                   />
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-zinc-500 mb-1.5 uppercase tracking-wide">Nombre de Cuenta</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-zinc-400 ml-1">
+                    Nombre de Cuenta
+                  </label>
                   <input
-                    type="text"
+                    required
+                    value={formData.nombre}
+                    onChange={(e) =>
+                      setFormData({ ...formData, nombre: e.target.value })
+                    }
                     placeholder="Ej. Caja General"
-                    className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:border-[#D3AB80] focus:ring-2 focus:ring-[#D3AB80]/20 outline-none transition-all text-sm"
+                    className="w-full p-4 bg-zinc-50 border rounded-2xl outline-none focus:border-[#D3AB80] font-bold text-sm"
                   />
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-zinc-500 mb-1.5 uppercase tracking-wide">Nivel / Tipo</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-zinc-400 ml-1">
+                    Nivel / Tipo
+                  </label>
                   <select
-                    className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:border-[#D3AB80] focus:ring-2 focus:ring-[#D3AB80]/20 outline-none transition-all text-sm appearance-none"
+                    required
+                    value={formData.nivel}
+                    onChange={(e) =>
+                      setFormData({ ...formData, nivel: e.target.value })
+                    }
+                    className="w-full p-4 bg-zinc-50 border rounded-2xl outline-none font-bold text-sm"
                   >
                     <option value="">Seleccionar nivel...</option>
                     <option value="clase">Clase (1 dígito)</option>
@@ -245,23 +311,27 @@ export default function PucPage() {
                     <option value="auxiliar">Auxiliar (8 dígitos)</option>
                   </select>
                 </div>
+                <div className="pt-4 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="flex-1 py-4 font-black text-xs uppercase text-zinc-400"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="flex-[2] py-4 bg-[#D3AB80] text-white rounded-2xl font-black text-xs uppercase shadow-lg shadow-[#D3AB80]/20"
+                  >
+                    {isSaving ? "Guardando..." : "Guardar Cuenta"}
+                  </button>
+                </div>
               </form>
-            </div>
-
-            <div className="px-6 py-4 border-t border-zinc-100 bg-zinc-50 flex items-center justify-end gap-3">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-5 py-2.5 rounded-xl font-bold text-zinc-600 hover:bg-zinc-200 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button className="px-6 py-2.5 rounded-xl font-bold bg-gradient-to-br from-[#D3AB80] to-[#b38e60] text-white shadow-lg shadow-[#D3AB80]/30 hover:shadow-xl hover:-translate-y-0.5 transition-all">
-                Guardar Cuenta
-              </button>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }
